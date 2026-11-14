@@ -8,7 +8,10 @@ Schlanke ASP.NET Core 10 Web API als Fassade vor der [TRIAS-Schnittstelle](https
 |---------|------|--------------|
 | GET | `/api/stops/search?query=krenngasse` | Haltestellen suchen |
 | GET | `/api/departures/{stopId}` | Alle Abfahrten einer Haltestelle |
+| GET | `/api/departures/{stopId}?line=23&direction=inward&limit=3` | Gefiltert: Linie, Richtung (`outward`/`inward`), Anzahl (1–100) – alle Parameter optional |
 | GET | `/api/departures/{stopId}/line/{line}` | Abfahrten gefiltert nach Linie |
+
+**Rate Limiting:** pro Client-IP 60 Anfragen auf einmal, danach 30 pro Minute. Darüber gibt es `429` mit `Retry-After`. Einstellbar über `RateLimiting:Burst`, `RateLimiting:PerMinute`, `RateLimiting:Enabled`. Der Alexa-Skill ist davon nicht betroffen (eigener Service, ruft TRIAS direkt).
 
 Beispiel-Abfahrt (alle Zeiten in UTC, `minutes` wird bei jedem Aufruf neu berechnet; `direction` ist `outward` oder `inward` und trennt die zwei Richtungen einer Linie):
 

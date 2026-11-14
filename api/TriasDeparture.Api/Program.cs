@@ -33,6 +33,7 @@ try
     // ── Web API + Swagger ─────────────────────────────────────────────────────
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<TriasExceptionHandler>();
+    builder.Services.AddClientRateLimiting(builder.Configuration);
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(c =>
@@ -54,8 +55,10 @@ try
     var app = builder.Build();
     // ────────────────────────────────────────────────────────────────────────
 
+    app.UseForwardedHeaders();
     app.UseExceptionHandler();
     app.UseSerilogRequestLogging();
+    app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
     {
