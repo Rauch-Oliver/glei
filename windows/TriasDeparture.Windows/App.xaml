@@ -1,0 +1,13 @@
+<Application x:Class="TriasDeparture.Windows.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:popup="clr-namespace:TriasDeparture.Windows.Popup"
+             ShutdownMode="OnExplicitShutdown"
+             ThemeMode="System">
+    <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <popup:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+        <popup:PlaceholderVisibilityConverter x:Key="PlaceholderVisibility" />
+        <popup:FirstNonEmptyConverter x:Key="FirstNonEmpty" />
+    </Application.Resources>
+</Application>

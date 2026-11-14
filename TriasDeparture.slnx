@@ -13,4 +13,8 @@
   <Folder Name="/api/">
     <Project Path="api/TriasDeparture.Api/TriasDeparture.Api.csproj" />
   </Folder>
+  <Folder Name="/windows/">
+    <Project Path="windows/TriasDeparture.Windows.Tests/TriasDeparture.Windows.Tests.csproj" />
+    <Project Path="windows/TriasDeparture.Windows/TriasDeparture.Windows.csproj" />
+  </Folder>
 </Solution>

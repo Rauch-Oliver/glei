@@ -14,17 +14,29 @@ public sealed class DeparturesController : ControllerBase
 
     public DeparturesController(DepartureService service) => _service = service;
 
-    /// <summary>Returns all upcoming departures for the given stop.</summary>
-    /// <param name="stopId">Stop ID (StopPointRef), e.g. de:643:1234</param>
+    /// <summary>Returns upcoming departures for the given stop, optionally filtered.</summary>
+    /// <param name="stopId">Stop ID (StopPointRef), e.g. at:46:3171</param>
+    /// <param name="line">Only this line, e.g. 3 or N5</param>
+    /// <param name="direction">Only this direction of the line: outward or inward</param>
+    /// <param name="limit">Maximum number of departures (1–100)</param>
     [HttpGet("{stopId}")]
     [ProducesResponseType(typeof(IReadOnlyList<DepartureDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetDepartures(string stopId, CancellationToken ct)
+    public async Task<IActionResult> GetDepartures(
+        string stopId,
+        [FromQuery] string? line,
+        [FromQuery] string? direction,
+        [FromQuery] int? limit,
+        CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(stopId))
             return BadRequest("stopId is required.");
+        if (direction is not null && direction.ToLowerInvariant() is not ("outward" or "inward"))
+            return BadRequest("direction must be 'outward' or 'inward'.");
+        if (limit is < 1 or > 100)
+            return BadRequest("limit must be between 1 and 100.");
 
-        var departures = await _service.GetDeparturesAsync(stopId, ct);
+        var departures = await _service.GetDeparturesAsync(stopId, new DepartureFilter(line, direction, limit), ct);
         return Ok(departures);
     }
 
