@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14897A"/>
+      <stop offset="1" stop-color="#0B5A50"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- rails -->
+  <path d="M214 404 L150 512 M298 404 L362 512" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="12" stroke-linecap="round"/>
+  <!-- pantograph -->
+  <path d="M256 128 L222 92 L268 70 M196 70 L316 70" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- body -->
+  <rect x="150" y="124" width="212" height="280" rx="52" fill="#FFFFFF"/>
+  <!-- line display -->
+  <rect x="196" y="146" width="120" height="44" rx="10" fill="#0F172A"/>
+  <text x="256" y="181" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="38" fill="#FBBF24">3</text>
+  <!-- windshield -->
+  <rect x="172" y="206" width="168" height="112" rx="22" fill="#0B5A50"/>
+  <!-- headlights -->
+  <circle cx="200" cy="358" r="15" fill="#FBBF24"/>
+  <circle cx="312" cy="358" r="15" fill="#FBBF24"/>
+  <!-- bumper -->
+  <rect x="226" y="350" width="60" height="16" rx="8" fill="#CBD5E1"/>
+</svg>
