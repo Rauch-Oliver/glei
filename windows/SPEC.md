@@ -105,7 +105,7 @@ Die Anzeige der gesuchten Haltestelle wird alle 30 s aktualisiert, solange das P
 
 ## 4. Daten & Einstellungen
 
-Die Einstellungen liegen in `%LOCALAPPDATA%\glei\settings.json`:
+Die Einstellungen liegen in `%APPDATA%\glei\settings.json`. Das ist getrennt vom Installationsordner von Velopack (`%LOCALAPPDATA%\glei`), damit Updates sie nie anfassen:
 
 ```json
 {
@@ -123,7 +123,7 @@ Die Einstellungen liegen in `%LOCALAPPDATA%\glei\settings.json`:
 
 - Die API-Basis-URL steht in `appsettings.json` neben der .exe (die öffentliche Cloud-Run-URL des Service `glei`). Für Entwicklung lässt sie sich mit der Umgebungsvariable `GLEI_API_URL` überschreiben.
 - Es gibt keinen Login, keine Telemetrie, und es wird nichts außer der Einstellungsdatei gespeichert.
-- Das Log liegt in `%LOCALAPPDATA%\glei\logs\` (Serilog, rollierend, 7 Tage), damit Fehler nachvollziehbar sind.
+- Das Log liegt in `%APPDATA%\glei\logs\` (Serilog, rollierend, 7 Tage), damit Fehler nachvollziehbar sind.
 
 ## 5. Benötigte API-Änderungen (`api/`)
 

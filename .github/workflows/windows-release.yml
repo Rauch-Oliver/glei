@@ -1,0 +1,61 @@
+# Builds the Windows tray app and publishes the installer as GitHub Release.
+# Trigger: push a tag like windows-v0.1.0  →  git tag windows-v0.1.0 && git push origin windows-v0.1.0
+name: Windows release
+
+on:
+  push:
+    tags: ['windows-v*']
+
+permissions:
+  contents: write   # create the release and upload the assets
+
+env:
+  VPK_VERSION: 1.2.161   # keep in sync with the Velopack package in TriasDeparture.Windows.csproj
+  REPO_URL: https://github.com/${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Version from tag
+        shell: pwsh
+        run: |
+          $version = '${{ github.ref_name }}'.Substring('windows-v'.Length)
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Test
+        run: dotnet test windows/TriasDeparture.Windows.Tests -c Release
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version ${{ env.VPK_VERSION }}
+
+      # One Velopack channel per architecture; the installed app updates from the channel it came from
+      - name: Publish, pack and upload
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          foreach ($rid in 'win-x64', 'win-arm64') {
+            dotnet publish windows/TriasDeparture.Windows -c Release -r $rid --self-contained true `
+              -p:Version=$env:VERSION -o "publish/$rid"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+            # Previous release of this channel → delta updates
+            vpk download github --repoUrl $env:REPO_URL --token $env:GITHUB_TOKEN --channel $rid -o "releases/$rid"
+
+            vpk pack --packId glei --packVersion $env:VERSION --packDir "publish/$rid" --mainExe glei.exe `
+              --packTitle glei --packAuthors "Matthias Geisriegler" `
+              --icon windows/TriasDeparture.Windows/Assets/glei.ico `
+              --runtime $rid --channel $rid -o "releases/$rid"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+            vpk upload github --repoUrl $env:REPO_URL --token $env:GITHUB_TOKEN --channel $rid -o "releases/$rid" `
+              --publish --merge --releaseName "glei für Windows $env:VERSION" --tag '${{ github.ref_name }}'
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
