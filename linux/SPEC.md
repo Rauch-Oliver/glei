@@ -29,8 +29,10 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 - Zustände wie unter Windows (Zahl, `h`, `–`, ausgegraut, `!`, App-Icon ohne Favorit), mit Echtzeit-Punkt.
 - Das Icon wird in **64 × 64 px** gerendert. Der Tray-Host skaliert es auf die Panel-Größe, eine DPI-Abfrage wie unter Windows entfällt.
 - **Schriftfarbe:**
-  - **GNOME:** immer weiß. Die obere Leiste ist im hellen wie im dunklen Modus dunkel.
-  - **Andere Desktops:** nach dem System-Theme (Avalonia `ActualThemeVariant`, über das Freedesktop-Portal): schwarz bei hellem, weiß bei dunklem Theme, mit Reaktion auf Theme-Wechsel.
+  - **KDE Plasma:** nach dem System-Theme (Avalonia `ActualThemeVariant`): schwarz bei hellem, weiß bei dunklem, mit Reaktion auf Theme-Wechsel. Nur dort folgt das Panel standardmäßig dem Farbschema.
+  - **Alle anderen** (GNOME, Cinnamon, MATE, Budgie, Xfce): weiß. Deren Panels sind standardmäßig dunkel, auch bei hellem App-Theme.
+  - Umgebungsvariable `GLEI_PANEL=light|dark` überschreibt die Erkennung.
+  - Die Ziffern haben eine dünne Kontur in der Gegenfarbe, damit sie auch bei falsch erkanntem Panel lesbar bleiben.
 - **Tooltip:** Avalonia setzt den Text als `Title` des StatusNotifierItems. Ob und wie er erscheint, entscheidet der Host (KDE zeigt ihn, GNOMEs AppIndicator-Erweiterung nicht).
 - **Linksklick:** öffnet bzw. schließt das Popup (`Activate`). Manche Hosts (u. a. Ubuntus AppIndicator-Erweiterung) öffnen bei Linksklick stattdessen das Menü, deshalb steht **„Öffnen“** als erster Menüeintrag.
 - **Menü:** „Öffnen“, „Aktualisieren“, „Beim Anmelden starten“ (✓), „Info“, „Beenden“.
@@ -53,7 +55,8 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 - **Beim Anmelden starten** ist standardmäßig **an**. Umgesetzt über `~/.config/autostart/glei.desktop` ([XDG Autostart](https://specifications.freedesktop.org/autostart-spec/)). Abschaltbar im Menü. Gespeichert im selben Feld wie unter Windows (`startWithWindows`), damit das Einstellungsformat gleich bleibt.
 - Zusätzlich legt die App einen **Eintrag im App-Menü** an (`~/.local/share/applications/glei.desktop` + Icon unter `~/.local/share/icons/hicolor/256x256/apps/glei.png`). Damit lässt sie sich nach „Beenden“ wieder starten.
 - `Exec=` zeigt auf die AppImage-Datei (`$APPIMAGE`), nicht auf den temporären Mount-Ordner. Pfade mit Sonderzeichen werden nach der Desktop-Entry-Spezifikation gequotet (inkl. `%` → `%%`). Beide `.desktop`-Dateien werden bei jedem Start aktualisiert, falls das AppImage verschoben wurde.
-- Nur das installierte AppImage trägt sich ein. Ein Entwicklungs-Build fasst Autostart und App-Menü nie an, der Menüpunkt „Beim Anmelden starten“ ist dort ausgegraut.
+- Alle Einträge haben `StartupWMClass=glei` (die WM_CLASS der Fenster), damit das Dock die Fenster der App zuordnet und ihr Icon zeigt.
+- Nur das installierte AppImage trägt sich in Autostart und App-Menü ein, der Menüpunkt „Beim Anmelden starten“ ist in Entwicklungs-Builds ausgegraut. Ein Entwicklungs-Build legt nur einen **versteckten** Eintrag `glei-dev.desktop` (`NoDisplay=true`, kein Autostart) und das Icon an. Neuere GNOME-Versionen nehmen das Dock-Icon nur noch aus einem passenden `.desktop`-Eintrag, nicht mehr vom Fenster. Ist ein installiertes glei vorhanden, entfällt der Entwicklungs-Eintrag.
 
 ## 3. Aktualisierung
 
@@ -76,7 +79,7 @@ Nach der [XDG Base Directory Specification](https://specifications.freedesktop.o
 |---|---|
 | Einstellungen | `$XDG_CONFIG_HOME/glei/settings.json` (Standard `~/.config/glei/settings.json`), **gleiches Format** wie unter Windows |
 | Log | `$XDG_STATE_HOME/glei/logs/` (Standard `~/.local/state/glei/logs/`), Serilog, rollierend, 7 Tage |
-| Single-Instance-Lock und -Socket | `$XDG_RUNTIME_DIR/glei.lock`, `glei.sock`. Ohne `XDG_RUNTIME_DIR`: eigener Ordner `/tmp/glei-<Benutzer>` (nur für den Besitzer), nie das geteilte `/tmp` |
+| Single-Instance-Lock und -Socket | `$XDG_RUNTIME_DIR/glei.lock`, `glei.sock`. Ohne `XDG_RUNTIME_DIR`: `$XDG_CACHE_HOME/glei/` (Standard `~/.cache/glei/`, Modus 0700), nie das geteilte `/tmp` |
 
 - API-Basis-URL wie unter Windows: `GLEI_API_URL`, sonst `appsettings.json` neben der Programmdatei, sonst die öffentliche URL.
 - Kein Login, keine Telemetrie. User-Agent `glei-linux/<Version>`.
@@ -104,15 +107,13 @@ linux/
 
 - **Gemeinsamer Code:** Die plattformunabhängigen Dateien der Windows-App werden als **verlinkte Dateien** (`<Compile Include="..\..\windows\…" Link="Shared\…" />`) mitkompiliert und behalten ihre Namespaces `TriasDeparture.Windows.*`. Es gibt also eine Quelle für API-Client, Einstellungen, Abfahrtslogik und Tooltip-Texte. `FavoriteMonitor` und `PopupViewModel` sind Kopien, weil sie WPFs `DispatcherTimer` verwenden. Unter Linux kommt Avalonias Timer zum Einsatz, der Monitor hat zusätzlich die Standby-Erkennung über den Zeitsprung.
 - **Modelle:** Projektverweis auf `core/TriasDeparture.Domain`, wie unter Windows.
-- **Single Instance:** Der erste Start hält eine exklusive Lockdatei (`flock`, wird vom Kernel beim Prozessende freigegeben) und lauscht auf einem Unix-Socket. Ein zweiter Start verbindet sich und öffnet damit das Popup der laufenden Instanz. Lassen sich Lockdatei oder Socket nicht nutzen (fremde Datei, Pfad zu lang für einen Unix-Socket …), läuft die App trotzdem, nur ohne diese Funktion, und schreibt den Grund ins Log.
+- **Single Instance:** Der erste Start hält eine exklusive Lockdatei (`flock`, wird vom Kernel beim Prozessende freigegeben) und lauscht auf einem Unix-Socket. Ein zweiter Start verbindet sich und öffnet damit das Popup der laufenden Instanz. Nur ein gehaltener Lock (`EWOULDBLOCK`) gilt als „läuft schon“. Andere Fehler (fremde Datei, schreibgeschützt, voll …) sind kein Beweis. Dann prüft die App, ob eine laufende Instanz auf dem Socket antwortet, und startet sonst ohne Lock, aber weiterhin mit Socket. Lässt sich auch der Socket nicht nutzen (z. B. Pfad zu lang), läuft die App ohne diese Funktion. Der Grund steht jeweils im Log.
 
 ## 7. Build & Release
 
 - **GitHub Actions** auf Tag `linux-v*`, z. B. `linux-v0.1.0` ([linux-release.yml](../.github/workflows/linux-release.yml)):
-  1. `dotnet test linux/…Tests`
-  2. `dotnet publish` (self-contained), je ein Job für `linux-x64` (`ubuntu-latest`) und `linux-arm64` (`ubuntu-24.04-arm`), nacheinander
-  3. `vpk pack` → AppImage + Update-Pakete, ein Velopack-Kanal pro Architektur
-  4. Upload in ein gemeinsames GitHub Release „glei für Linux …“
+  1. **Packen**, je ein Job pro Architektur auf eigenem Runner (`linux-x64` auf `ubuntu-latest`, `linux-arm64` auf `ubuntu-24.04-arm`): `dotnet test`, `dotnet publish` (self-contained), `vpk download` (Vorversion für Delta-Updates), `vpk pack` → AppImage + Update-Pakete, ein Velopack-Kanal pro Architektur
+  2. **Veröffentlichen**, erst wenn beide Architekturen gepackt sind: ein Job lädt beide Kanäle in ein gemeinsames GitHub Release „glei für Linux …“ hoch. Schlägt eine Architektur fehl, wird nichts veröffentlicht
 - **Auto-Update:** wie unter Windows. Velopack prüft beim Start (nach 30 s) und dann alle 24 h. Ein Update wird im Hintergrund geladen und ersetzt das AppImage beim Beenden.
 - Linux- und Windows-Releases sind getrennt (eigene Tags), die Versionen dürfen auseinanderlaufen.
 

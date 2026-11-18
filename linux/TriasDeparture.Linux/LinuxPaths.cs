@@ -22,27 +22,15 @@ public static class LinuxPaths
 
     public static string LogDirectory => Path.Combine(StateHome, "glei", "logs");
 
+    /// <summary>~/.cache – fallback for the runtime dir.</summary>
+    public static string CacheHome => Xdg("XDG_CACHE_HOME", ".cache");
+
     /// <summary>
-    /// Per-user runtime dir for the single-instance socket and lock: $XDG_RUNTIME_DIR, or else a private
-    /// folder in /tmp (never /tmp itself, which all users share).
+    /// Per-user runtime dir for the single-instance socket and lock: $XDG_RUNTIME_DIR, or else ~/.cache/glei.
+    /// Never /tmp: other users could put files there under the name glei looks for.
     /// </summary>
     public static string RuntimeDirectory =>
         Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } dir && Path.IsPathRooted(dir)
             ? dir
-            : PrivateTempDirectory();
-
-    private static string PrivateTempDirectory()
-    {
-        var dir = Path.Combine(Path.GetTempPath(), $"glei-{Environment.UserName}");
-        try
-        {
-            // Only the owner may enter; if another user already took the name, opening the lock in it fails
-            // and the app runs without single-instance (see SingleInstance.Acquire)
-            Directory.CreateDirectory(dir, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-        }
-        return dir;
-    }
+            : Path.Combine(CacheHome, "glei");
 }

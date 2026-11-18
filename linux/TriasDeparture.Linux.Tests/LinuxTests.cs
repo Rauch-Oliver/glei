@@ -49,6 +49,28 @@ public sealed class LinuxTests : IDisposable
         desktop.Entry(autostart: true).ShouldContain("NoDisplay=true\n");
     }
 
+    [Fact]
+    public void Entry_MatchesGleisWindows_SoTheDockShowsTheIcon()
+    {
+        Desktop().Entry(autostart: false).ShouldContain("StartupWMClass=glei\n");
+        Desktop().Entry(autostart: true).ShouldContain("StartupWMClass=glei\n");
+    }
+
+    [Fact]
+    public void DevelopmentEntry_IsHidden_AndStartsTheDll()
+    {
+        var desktop = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"),
+            "/usr/lib/dotnet/dotnet", "/src/glei/bin/Debug/net10.0/glei.dll");
+
+        var entry = desktop.Entry(autostart: false, development: true);
+
+        entry.ShouldContain("Name=glei (Entwicklung)\n");
+        entry.ShouldContain("NoDisplay=true\n");
+        entry.ShouldContain("Exec=/usr/lib/dotnet/dotnet /src/glei/bin/Debug/net10.0/glei.dll\n");
+        entry.ShouldNotContain("Autostart");
+        desktop.DevelopmentFile.ShouldEndWith(Path.Combine("applications", "glei-dev.desktop"));
+    }
+
     [Theory]
     [InlineData("/opt/glei/glei", "/opt/glei/glei")]
     [InlineData("/home/me/My Apps/glei.AppImage", "\"/home/me/My Apps/glei.AppImage\"")]
@@ -59,13 +81,18 @@ public sealed class LinuxTests : IDisposable
     // ── Tray icon color ─────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("ubuntu:GNOME", "Light", false)]  // GNOME's top bar is always dark
-    [InlineData("GNOME", "Dark", false)]
-    [InlineData("KDE", "Light", true)]
-    [InlineData("KDE", "Dark", false)]
-    [InlineData(null, "Light", true)]
-    public void PanelColor_FollowsTheDesktop(string? desktop, string theme, bool light) =>
-        IconRenderer.IsPanelLight(desktop, theme == "Light" ? ThemeVariant.Light : ThemeVariant.Dark).ShouldBe(light);
+    [InlineData("ubuntu:GNOME", "Light", null, false)]  // GNOME's top bar is always dark
+    [InlineData("GNOME", "Dark", null, false)]
+    [InlineData("X-Cinnamon", "Light", null, false)]    // Mint: light apps, dark panel
+    [InlineData("XFCE", "Light", null, false)]
+    [InlineData("KDE", "Light", null, true)]            // Plasma's panel follows the color scheme
+    [InlineData("KDE", "Dark", null, false)]
+    [InlineData(null, "Light", null, false)]
+    [InlineData("GNOME", "Dark", "light", true)]        // $GLEI_PANEL wins
+    [InlineData("KDE", "Light", " Dark ", false)]
+    [InlineData("KDE", "Light", "bogus", true)]
+    public void PanelColor_FollowsTheDesktop(string? desktop, string theme, string? overrideValue, bool light) =>
+        IconRenderer.IsPanelLight(desktop, theme == "Light" ? ThemeVariant.Light : ThemeVariant.Dark, overrideValue).ShouldBe(light);
 
     // ── Popup placement ─────────────────────────────────────────────────────
 
@@ -169,6 +196,43 @@ public sealed class LinuxRobustnessTests : IDisposable
         instance.IsFirst.ShouldBeTrue();
         instance.Listen(() => { }).ShouldNotBeNull();
         Should.NotThrow(() => SingleInstance.Acquire("glei-test2", deep).SignalFirst());
+    }
+
+    [Fact]
+    public void SingleInstance_OtherIoError_IsNotMistakenForARunningInstance()
+    {
+        // A file where the directory should be: IOException, but not "locked"
+        var notADir = Path.Combine(_dir, "file");
+        File.WriteAllText(notADir, "");
+
+        using var instance = SingleInstance.Acquire("glei-test", notADir);
+
+        instance.IsFirst.ShouldBeTrue();
+        instance.Problem.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void SingleInstance_WithoutLock_ALaterStartStillFindsTheRunningOne()
+    {
+        var lockPath = Path.Combine(_dir, "glei-test.lock");
+        File.WriteAllText(lockPath, "");
+        File.SetUnixFileMode(lockPath, UnixFileMode.UserRead);
+        if (Environment.UserName == "root") return;
+
+        using var first = SingleInstance.Acquire("glei-test", _dir);
+        first.IsFirst.ShouldBeTrue();
+        first.Listen(() => { });
+
+        using var second = SingleInstance.Acquire("glei-test", _dir);
+        second.IsFirst.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void SingleInstance_CreatesItsDirectoryPrivate()
+    {
+        var dir = Path.Combine(_dir, "rt");
+        using var instance = SingleInstance.Acquire("glei-test", dir);
+        File.GetUnixFileMode(dir).ShouldBe(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
     }
 
     [Fact]

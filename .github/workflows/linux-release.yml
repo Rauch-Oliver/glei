@@ -1,5 +1,8 @@
 # Builds the Linux tray app and publishes it as AppImage in a GitHub Release.
 # Trigger: push a tag like linux-v0.1.0  →  git tag linux-v0.1.0 && git push origin linux-v0.1.0
+#
+# Two stages, so a release is only published complete: first both architectures are tested, built and packed
+# (each on its own native runner); only when both succeeded, one job uploads them and publishes the release.
 name: Linux release
 
 on:
@@ -14,10 +17,8 @@ env:
   REPO_URL: https://github.com/${{ github.repository }}
 
 jobs:
-  release:
+  pack:
     strategy:
-      # One after the other: both jobs upload into the same release
-      max-parallel: 1
       matrix:
         include:
           - rid: linux-x64
@@ -25,6 +26,8 @@ jobs:
           - rid: linux-arm64
             runner: ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
+    env:
+      RID: ${{ matrix.rid }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,16 +45,15 @@ jobs:
         run: dotnet tool install -g vpk --version "$VPK_VERSION"
 
       # One Velopack channel per architecture; the installed app updates from the channel it came from
-      - name: Publish, pack and upload
+      - name: Publish and pack
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RID: ${{ matrix.rid }}
         run: |
           set -euo pipefail
           dotnet publish linux/TriasDeparture.Linux -c Release -r "$RID" --self-contained true \
             -p:Version="$VERSION" -o "publish/$RID"
 
-          # Previous release of this channel → delta updates
+          # Previous release of this channel → delta updates (before anything of this version is uploaded)
           vpk download github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$RID" -o "releases/$RID"
 
           vpk pack --packId glei --packVersion "$VERSION" --packDir "publish/$RID" --mainExe glei \
@@ -59,5 +61,37 @@ jobs:
             --icon linux/TriasDeparture.Linux/Assets/glei.png \
             --runtime "$RID" --channel "$RID" -o "releases/$RID"
 
-          vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$RID" -o "releases/$RID" \
-            --publish --merge --releaseName "glei für Linux $VERSION" --tag "$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: releases-${{ matrix.rid }}
+          path: releases/${{ matrix.rid }}
+          if-no-files-found: error
+
+  release:
+    needs: pack   # runs only when every architecture was packed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#linux-v}" >> "$GITHUB_ENV"
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version "$VPK_VERSION"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: releases-*
+          path: releases
+
+      - name: Upload and publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          for rid in linux-x64 linux-arm64; do
+            vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$rid" -o "releases/releases-$rid" \
+              --publish --merge --releaseName "glei für Linux $VERSION" --tag "$GITHUB_REF_NAME"
+          done

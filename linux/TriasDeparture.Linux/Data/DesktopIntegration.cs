@@ -4,49 +4,61 @@ using Serilog;
 namespace TriasDeparture.Linux.Data;
 
 /// <summary>
-/// Freedesktop integration of an installed (AppImage) glei: autostart entry ("Beim Anmelden starten"),
-/// app-menu entry and icon. Development builds never touch these files.
+/// Freedesktop integration: autostart entry ("Beim Anmelden starten"), app-menu entry and icon for the installed
+/// AppImage; for development builds only a hidden entry, so the dock shows the glei icon while debugging.
 /// </summary>
-public sealed class DesktopIntegration(string configHome, string dataHome, string executable)
+/// <param name="executable">What to start: the AppImage, the apphost, or the dotnet host.</param>
+/// <param name="argument">The app's dll when started through the dotnet host (<c>dotnet glei.dll</c>), else null.</param>
+public sealed class DesktopIntegration(string configHome, string dataHome, string executable, string? argument = null)
 {
     public const string FileName = "glei.desktop";
+    public const string DevelopmentFileName = "glei-dev.desktop";
+
+    /// <summary>WM_CLASS of glei's windows (Avalonia uses the program name); the dock matches windows to entries by it.</summary>
+    public const string WindowClass = "glei";
 
     public string AutostartFile => Path.Combine(configHome, "autostart", FileName);
     public string MenuFile => Path.Combine(dataHome, "applications", FileName);
+    public string DevelopmentFile => Path.Combine(dataHome, "applications", DevelopmentFileName);
     public string IconFile => Path.Combine(dataHome, "icons", "hicolor", "256x256", "apps", "glei.png");
 
     /// <summary>
-    /// The path to put into Exec=: inside an AppImage the process runs from a temporary mount,
-    /// so the AppImage file itself ($APPIMAGE) must be started.
+    /// What to put into Exec=: inside an AppImage the process runs from a temporary mount, so the AppImage file
+    /// itself ($APPIMAGE) must be started; <c>dotnet run</c> / <c>dotnet glei.dll</c> runs in the dotnet host.
     /// </summary>
-    public static string? CurrentExecutable() =>
-        Environment.GetEnvironmentVariable("APPIMAGE") is { Length: > 0 } appImage ? appImage : Environment.ProcessPath;
-
-    public static DesktopIntegration? ForCurrentUser() =>
-        CurrentExecutable() is { } exe ? new DesktopIntegration(LinuxPaths.ConfigHome, LinuxPaths.DataHome, exe) : null;
+    public static DesktopIntegration? ForCurrentUser()
+    {
+        if (Environment.GetEnvironmentVariable("APPIMAGE") is { Length: > 0 } appImage)
+            return new DesktopIntegration(LinuxPaths.ConfigHome, LinuxPaths.DataHome, appImage);
+        if (Environment.ProcessPath is not { } process)
+            return null;
+        var dll = Path.GetFileNameWithoutExtension(process) == "dotnet" ? typeof(DesktopIntegration).Assembly.Location : null;
+        return new DesktopIntegration(LinuxPaths.ConfigHome, LinuxPaths.DataHome, process, dll is { Length: > 0 } ? dll : null);
+    }
 
     /// <summary>Contents of glei.desktop (Desktop Entry Specification 1.5).</summary>
-    public string Entry(bool autostart)
+    public string Entry(bool autostart, bool development = false)
     {
+        var exec = argument is null ? QuoteExec(executable) : $"{QuoteExec(executable)} {QuoteExec(argument)}";
         var lines = new List<string>
         {
             "[Desktop Entry]",
             "Type=Application",
             "Version=1.5",
-            "Name=glei",
+            development ? "Name=glei (Entwicklung)" : "Name=glei",
             "GenericName=Abfahrten",
             "Comment=Live-Abfahrten für Bim und Bus in Graz",
-            $"Exec={QuoteExec(executable)}",
+            $"Exec={exec}",
             "Icon=glei",
             "Terminal=false",
+            $"StartupWMClass={WindowClass}",
             "Categories=Utility;",
             "Keywords=Bus;Bim;Straßenbahn;Abfahrt;Graz;"
         };
         if (autostart)
-        {
             lines.Add("X-GNOME-Autostart-enabled=true");
+        if (autostart || development)
             lines.Add("NoDisplay=true");
-        }
         return string.Join('\n', lines) + "\n";
     }
 
@@ -71,18 +83,40 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
         try
         {
             Write(MenuFile, Entry(autostart: false));
-            if (!File.Exists(IconFile))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(IconFile)!);
-                using var png = AssetLoader.Open(new Uri("avares://glei/Assets/glei.png"));
-                using var file = File.Create(IconFile);
-                png.CopyTo(file);
-            }
+            InstallIcon();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Log.Warning(ex, "Installing the app-menu entry failed");
         }
+    }
+
+    /// <summary>
+    /// Development build: a hidden entry (not in the app menu, no autostart) + icon. GNOME's dock no longer uses a
+    /// window's own icon; without an entry matching <see cref="WindowClass"/> it shows a generic one.
+    /// </summary>
+    public void InstallDevelopmentEntry()
+    {
+        try
+        {
+            // An installed glei already provides the entry for this window class
+            if (!File.Exists(MenuFile))
+                Write(DevelopmentFile, Entry(autostart: false, development: true));
+            InstallIcon();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warning(ex, "Installing the development entry failed");
+        }
+    }
+
+    private void InstallIcon()
+    {
+        if (File.Exists(IconFile)) return;
+        Directory.CreateDirectory(Path.GetDirectoryName(IconFile)!);
+        using var png = AssetLoader.Open(new Uri("avares://glei/Assets/glei.png"));
+        using var file = File.Create(IconFile);
+        png.CopyTo(file);
     }
 
     private static void Write(string path, string content)

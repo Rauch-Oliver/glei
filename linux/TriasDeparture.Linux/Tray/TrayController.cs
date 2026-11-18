@@ -44,7 +44,7 @@ public sealed class TrayController : IDisposable
 
     public void Start()
     {
-        _lightPanel = IconRenderer.IsPanelLight(_desktop, _app.ActualThemeVariant);
+        _lightPanel = IconRenderer.IsPanelLight(_desktop, _app.ActualThemeVariant, Environment.GetEnvironmentVariable("GLEI_PANEL"));
         _viewModel  = new PopupViewModel(_api, _monitor, _settings, () => _store.Save(_settings), SetFavorite);
         _popup      = new PopupWindow(_viewModel);
 
@@ -69,11 +69,18 @@ public sealed class TrayController : IDisposable
         _ = _session.StartAsync();
 
         // Installed (AppImage): keep autostart and app-menu entry pointing at the current AppImage.
-        // Development builds never register themselves.
-        if (_isInstalled && DesktopIntegration.ForCurrentUser() is { } desktop)
+        // Development builds never register autostart or a menu entry, only a hidden entry for the dock icon.
+        if (DesktopIntegration.ForCurrentUser() is { } desktop)
         {
-            desktop.ApplyAutostart(_settings.StartWithWindows);
-            desktop.InstallMenuEntry();
+            if (_isInstalled)
+            {
+                desktop.ApplyAutostart(_settings.StartWithWindows);
+                desktop.InstallMenuEntry();
+            }
+            else
+            {
+                desktop.InstallDevelopmentEntry();
+            }
         }
 
         if (!_settings.WelcomeShown)
@@ -188,7 +195,7 @@ public sealed class TrayController : IDisposable
     /// <summary>System theme switched between light and dark: redraw the number in the matching color.</summary>
     private void OnThemeChanged(object? sender, EventArgs e)
     {
-        var light = IconRenderer.IsPanelLight(_desktop, _app.ActualThemeVariant);
+        var light = IconRenderer.IsPanelLight(_desktop, _app.ActualThemeVariant, Environment.GetEnvironmentVariable("GLEI_PANEL"));
         if (light == _lightPanel) return;
         _lightPanel = light;
         _shown = null;

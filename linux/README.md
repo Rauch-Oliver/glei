@@ -59,7 +59,8 @@ linux/publish/glei
 ```
 
 - Andere API (z. B. lokal): Umgebungsvariable `GLEI_API_URL=http://localhost:5199/` setzen, oder `ApiBaseUrl` in `appsettings.json` neben der Programmdatei ändern.
-- Eine lokale Version (kein AppImage von Velopack) trägt sich **nicht** in Autostart und App-Menü ein und sucht keine Updates.
+- Eine lokale Version (kein AppImage von Velopack) trägt sich **nicht** in Autostart und App-Menü ein und sucht keine Updates. Sie legt nur den versteckten Eintrag `~/.local/share/applications/glei-dev.desktop` und das Icon an, damit das Dock beim Debuggen das glei-Icon zeigt.
+- Falsche Ziffernfarbe im Panel? `GLEI_PANEL=light` (helles Panel, schwarze Ziffern) oder `GLEI_PANEL=dark` setzen.
 - Zum Ausprobieren ohne die eigenen Einstellungen: `XDG_CONFIG_HOME=/tmp/glei-cfg XDG_STATE_HOME=/tmp/glei-state dotnet run --project linux/TriasDeparture.Linux`.
 
 ### Gemeinsamer Code mit Windows
