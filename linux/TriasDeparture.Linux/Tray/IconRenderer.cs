@@ -38,27 +38,29 @@ public static class IconRenderer
             var brush = new SolidColorBrush(color);
             var typeface = new Typeface(FontFamily.Default, FontStyle.Normal, FontWeight.Bold);
 
-            // As big as possible: one digit fills the icon, two digits are squeezed to fit the width
-            var em = size * (text.Length > 1 ? 0.92 : 1.05);
+            // The realtime dot sits in the bottom-right corner; the digits keep clear of it
+            var dot   = size * 0.22;
+            var width = realtimeDot ? size - dot * 0.8 : size;
+
+            // As big as possible: the ink of the digits fills the free width (and at most the height)
+            var em = size * 1.1;
             FormattedText formatted;
+            Rect ink;
             while (true)
             {
                 formatted = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, typeface, em, brush);
-                if (formatted.WidthIncludingTrailingWhitespace <= size * 1.02 || em < 6)
+                // Ink bounds, not the line box: digits have no descender and some side bearing
+                ink = formatted.BuildGeometry(new Point(0, 0))?.Bounds ?? new Rect(0, 0, formatted.Width, formatted.Height);
+                if ((ink.Width <= width && ink.Height <= size) || em < 6)
                     break;
                 em -= 1;
             }
 
-            // Center on the ink of the glyphs, not on the line box (digits have no descender)
-            var ink = formatted.BuildGeometry(new Point(0, 0))?.Bounds ?? new Rect(0, 0, formatted.Width, formatted.Height);
-            var origin = new Point((size - ink.Width) / 2 - ink.X, (size - ink.Height) / 2 - ink.Y);
+            var origin = new Point((width - ink.Width) / 2 - ink.X, (size - ink.Height) / 2 - ink.Y);
             ctx.DrawText(formatted, origin);
 
             if (realtimeDot)
-            {
-                var d = size / 4.0;
-                ctx.DrawEllipse(new SolidColorBrush(RealtimeColor), null, new Rect(size - d, size - d, d, d));
-            }
+                ctx.DrawEllipse(new SolidColorBrush(RealtimeColor), null, new Rect(size - dot, size - dot, dot, dot));
         }
 
         using var png = new MemoryStream();
