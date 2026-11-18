@@ -7,6 +7,19 @@ public static class PopupPlacement
 {
     public const int EdgeGap = 12;
 
+    /// <summary>
+    /// The monitor for the popup. Linux doesn't tell an app where its tray icon is, so: the monitor that has a panel
+    /// (working area smaller than the screen), the primary one first; without any panel info the primary one.
+    /// </summary>
+    public static T? ChooseScreen<T>(IReadOnlyList<T> screens, Func<T, PixelRect> bounds, Func<T, PixelRect> workingArea,
+        Func<T, bool> isPrimary) where T : class
+    {
+        bool HasPanel(T s) => bounds(s) != workingArea(s);
+        return screens.Where(HasPanel).OrderByDescending(isPrimary).FirstOrDefault()
+               ?? screens.FirstOrDefault(isPrimary)
+               ?? screens.FirstOrDefault();
+    }
+
     /// <param name="bounds">Screen in pixels.</param>
     /// <param name="workingArea">Screen minus panels in pixels (equal to <paramref name="bounds"/> when unknown, e.g. on Wayland).</param>
     /// <param name="size">Popup size in pixels.</param>

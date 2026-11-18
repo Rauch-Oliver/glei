@@ -12,12 +12,21 @@ public sealed class SingleInstance : IDisposable
     private readonly string _socketPath;
     private Socket? _listener;
 
-    public bool IsFirst => _lock is not null;
+    /// <summary>
+    /// True when this process runs the app: it holds the lock, or the lock could not be used at all
+    /// (then the app runs without single-instance rather than not at all).
+    /// </summary>
+    public bool IsFirst { get; }
 
-    private SingleInstance(FileStream? lockFile, string socketPath)
+    /// <summary>Why single-instance is off, for the log (Acquire runs before logging is set up).</summary>
+    public string? Problem { get; }
+
+    private SingleInstance(bool isFirst, FileStream? lockFile, string socketPath, string? problem = null)
     {
+        IsFirst     = isFirst;
         _lock       = lockFile;
         _socketPath = socketPath;
+        Problem     = problem;
     }
 
     public static SingleInstance Acquire(string name, string? directory = null)
@@ -27,13 +36,20 @@ public sealed class SingleInstance : IDisposable
         var socketPath = Path.Combine(directory, $"{name}.sock");
         try
         {
+            Directory.CreateDirectory(directory);
             // FileShare.None is an flock() on Unix: released by the kernel when the process dies, never stale
             var file = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            return new SingleInstance(file, socketPath);
+            return new SingleInstance(true, file, socketPath);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or DirectoryNotFoundException or PathTooLongException)
+        {
+            // Not ours (e.g. another user's file) or not reachable – that is no proof of a running instance
+            return new SingleInstance(true, null, socketPath, $"lock {lockPath} unusable: {ex.Message}");
         }
         catch (IOException)
         {
-            return new SingleInstance(null, socketPath);
+            // Locked: another glei of this user is running
+            return new SingleInstance(false, null, socketPath);
         }
     }
 
@@ -45,22 +61,36 @@ public sealed class SingleInstance : IDisposable
             socket.Connect(new UnixDomainSocketEndPoint(_socketPath));
             socket.Send("show"u8);
         }
-        catch (SocketException)
+        catch (Exception ex) when (ex is SocketException or ArgumentException)
         {
-            // The first instance is still starting up – nothing to show yet
+            // The first instance is still starting up (or runs without socket) – nothing to show
         }
     }
 
     /// <summary>Calls <paramref name="onSignal"/> (on a pool thread) whenever another instance starts.</summary>
-    public void Listen(Action onSignal)
+    /// <remarks>Never throws: without the socket, the app runs on and a second start just does nothing.</remarks>
+    /// <returns>Why listening failed, or null.</returns>
+    public string? Listen(Action onSignal)
     {
-        if (!IsFirst) return;
+        if (_lock is null) return Problem;
 
-        File.Delete(_socketPath); // left over from a crashed run; we hold the lock, so it is ours
-        _listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-        _listener.Bind(new UnixDomainSocketEndPoint(_socketPath));
-        _listener.Listen(4);
-        _ = AcceptLoopAsync(_listener, onSignal);
+        Socket? listener = null;
+        try
+        {
+            File.Delete(_socketPath); // left over from a crashed run; we hold the lock, so it is ours
+            listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+            listener.Bind(new UnixDomainSocketEndPoint(_socketPath)); // ArgumentException when the path is too long
+            listener.Listen(4);
+        }
+        catch (Exception ex) when (ex is SocketException or IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            listener?.Dispose();
+            return $"socket {_socketPath} unusable: {ex.Message}";
+        }
+
+        _listener = listener;
+        _ = AcceptLoopAsync(listener, onSignal);
+        return null;
     }
 
     private static async Task AcceptLoopAsync(Socket listener, Action onSignal)
@@ -88,7 +118,7 @@ public sealed class SingleInstance : IDisposable
         if (_listener is not null)
         {
             _listener.Dispose();
-            try { File.Delete(_socketPath); } catch (IOException) { }
+            try { File.Delete(_socketPath); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
         _lock?.Dispose();
     }

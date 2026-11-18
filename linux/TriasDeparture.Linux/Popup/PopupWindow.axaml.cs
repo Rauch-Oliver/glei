@@ -41,7 +41,7 @@ public partial class PopupWindow : Window
 
     public void ShowPopup()
     {
-        var screen = Screens.Primary ?? Screens.All.FirstOrDefault();
+        var screen = PopupPlacement.ChooseScreen(Screens.All, s => s.Bounds, s => s.WorkingArea, s => s.IsPrimary);
         if (screen is not null)
         {
             var scaling = screen.Scaling;

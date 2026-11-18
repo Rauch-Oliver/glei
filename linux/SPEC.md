@@ -40,6 +40,7 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 - Gleicher Aufbau und gleiche Bedienung wie unter Windows (Favorit oben, Suche unten, Gruppierung nach Linie und Richtung, ☆/★, `Esc`, `Strg+F`, Lostippen, ↓ in die Ergebnisse).
 - Fenster ohne Rahmen, immer oben, nicht in der Taskleiste, ca. 360 × 480 px. Schließt bei Fokusverlust oder `Esc`.
 - **Position:** Linux sagt einer App nicht, wo ihr Tray-Icon sitzt. Deshalb:
+  0. **Bildschirm:** der mit einem Panel (Arbeitsbereich kleiner als der Bildschirm), bei mehreren der primäre. Ohne Panel-Info der primäre.
   1. Liegt ein Panel oben (Arbeitsbereich beginnt unter dem Bildschirmrand): **oben rechts** darunter.
   2. Liegt es unten: **unten rechts** darüber.
   3. Ist der Arbeitsbereich unbekannt (z. B. Wayland): unter GNOME oben rechts, sonst unten rechts.
@@ -51,7 +52,7 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 - Ist noch kein Favorit gesetzt, öffnet sich das Popup gleich mit. So kommt man auch an die App, wenn das Panel gar keinen Tray hat.
 - **Beim Anmelden starten** ist standardmäßig **an**. Umgesetzt über `~/.config/autostart/glei.desktop` ([XDG Autostart](https://specifications.freedesktop.org/autostart-spec/)). Abschaltbar im Menü. Gespeichert im selben Feld wie unter Windows (`startWithWindows`), damit das Einstellungsformat gleich bleibt.
 - Zusätzlich legt die App einen **Eintrag im App-Menü** an (`~/.local/share/applications/glei.desktop` + Icon unter `~/.local/share/icons/hicolor/256x256/apps/glei.png`). Damit lässt sie sich nach „Beenden“ wieder starten.
-- `Exec=` zeigt auf die AppImage-Datei (`$APPIMAGE`), nicht auf den temporären Mount-Ordner. Beide `.desktop`-Dateien werden bei jedem Start aktualisiert, falls das AppImage verschoben wurde.
+- `Exec=` zeigt auf die AppImage-Datei (`$APPIMAGE`), nicht auf den temporären Mount-Ordner. Pfade mit Sonderzeichen werden nach der Desktop-Entry-Spezifikation gequotet (inkl. `%` → `%%`). Beide `.desktop`-Dateien werden bei jedem Start aktualisiert, falls das AppImage verschoben wurde.
 - Nur das installierte AppImage trägt sich ein. Ein Entwicklungs-Build fasst Autostart und App-Menü nie an, der Menüpunkt „Beim Anmelden starten“ ist dort ausgegraut.
 
 ## 3. Aktualisierung
@@ -75,7 +76,7 @@ Nach der [XDG Base Directory Specification](https://specifications.freedesktop.o
 |---|---|
 | Einstellungen | `$XDG_CONFIG_HOME/glei/settings.json` (Standard `~/.config/glei/settings.json`), **gleiches Format** wie unter Windows |
 | Log | `$XDG_STATE_HOME/glei/logs/` (Standard `~/.local/state/glei/logs/`), Serilog, rollierend, 7 Tage |
-| Single-Instance-Lock und -Socket | `$XDG_RUNTIME_DIR/glei.lock`, `glei.sock` |
+| Single-Instance-Lock und -Socket | `$XDG_RUNTIME_DIR/glei.lock`, `glei.sock`. Ohne `XDG_RUNTIME_DIR`: eigener Ordner `/tmp/glei-<Benutzer>` (nur für den Besitzer), nie das geteilte `/tmp` |
 
 - API-Basis-URL wie unter Windows: `GLEI_API_URL`, sonst `appsettings.json` neben der Programmdatei, sonst die öffentliche URL.
 - Kein Login, keine Telemetrie. User-Agent `glei-linux/<Version>`.
@@ -103,7 +104,7 @@ linux/
 
 - **Gemeinsamer Code:** Die plattformunabhängigen Dateien der Windows-App werden als **verlinkte Dateien** (`<Compile Include="..\..\windows\…" Link="Shared\…" />`) mitkompiliert und behalten ihre Namespaces `TriasDeparture.Windows.*`. Es gibt also eine Quelle für API-Client, Einstellungen, Abfahrtslogik und Tooltip-Texte. `FavoriteMonitor` und `PopupViewModel` sind Kopien, weil sie WPFs `DispatcherTimer` verwenden. Unter Linux kommt Avalonias Timer zum Einsatz, der Monitor hat zusätzlich die Standby-Erkennung über den Zeitsprung.
 - **Modelle:** Projektverweis auf `core/TriasDeparture.Domain`, wie unter Windows.
-- **Single Instance:** Der erste Start hält eine exklusive Lockdatei (`flock`, wird vom Kernel beim Prozessende freigegeben) und lauscht auf einem Unix-Socket. Ein zweiter Start verbindet sich und öffnet damit das Popup der laufenden Instanz.
+- **Single Instance:** Der erste Start hält eine exklusive Lockdatei (`flock`, wird vom Kernel beim Prozessende freigegeben) und lauscht auf einem Unix-Socket. Ein zweiter Start verbindet sich und öffnet damit das Popup der laufenden Instanz. Lassen sich Lockdatei oder Socket nicht nutzen (fremde Datei, Pfad zu lang für einen Unix-Socket …), läuft die App trotzdem, nur ohne diese Funktion, und schreibt den Grund ins Log.
 
 ## 7. Build & Release
 

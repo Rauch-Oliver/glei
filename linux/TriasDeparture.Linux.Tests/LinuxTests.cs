@@ -127,3 +127,101 @@ public sealed class LinuxTests : IDisposable
         again.IsFirst.ShouldBeTrue();
     }
 }
+
+public sealed class LinuxRobustnessTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "glei-linux-tests-" + Guid.NewGuid().ToString("N"));
+
+    public LinuxRobustnessTests() => Directory.CreateDirectory(_dir);
+
+    public void Dispose()
+    {
+        foreach (var file in Directory.GetFiles(_dir, "*", SearchOption.AllDirectories))
+            File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        Directory.Delete(_dir, recursive: true);
+    }
+
+    // ── Single instance ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void SingleInstance_UnusableLockFile_RunsWithoutInsteadOfCrashing()
+    {
+        // Stands in for another user's /tmp file: exists, but we may not open it for writing
+        var lockPath = Path.Combine(_dir, "glei-test.lock");
+        File.WriteAllText(lockPath, "");
+        File.SetUnixFileMode(lockPath, UnixFileMode.UserRead);
+        if (Environment.UserName == "root") return; // root may open anything
+
+        using var instance = SingleInstance.Acquire("glei-test", _dir);
+
+        instance.IsFirst.ShouldBeTrue();
+        instance.Problem.ShouldNotBeNull();
+        instance.Listen(() => { }).ShouldNotBeNull(); // no socket, no exception
+    }
+
+    [Fact]
+    public void SingleInstance_SocketPathTooLong_RunsWithoutSignal()
+    {
+        // sun_path holds 108 bytes
+        var deep = Path.Combine(_dir, new string('x', 120));
+        using var instance = SingleInstance.Acquire("glei-test", deep);
+
+        instance.IsFirst.ShouldBeTrue();
+        instance.Listen(() => { }).ShouldNotBeNull();
+        Should.NotThrow(() => SingleInstance.Acquire("glei-test2", deep).SignalFirst());
+    }
+
+    [Fact]
+    public void SingleInstance_MissingDirectory_IsCreated()
+    {
+        using var instance = SingleInstance.Acquire("glei-test", Path.Combine(_dir, "new"));
+        instance.IsFirst.ShouldBeTrue();
+        instance.Problem.ShouldBeNull();
+    }
+
+    // ── Exec= ───────────────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("/home/me/100%done/glei.AppImage", "\"/home/me/100%%done/glei.AppImage\"")]
+    [InlineData("/home/me/Apps%20/glei", "\"/home/me/Apps%%20/glei\"")]
+    public void QuoteExec_EscapesPercent(string path, string expected) =>
+        DesktopIntegration.QuoteExec(path).ShouldBe(expected);
+
+    // ── Monitor choice ──────────────────────────────────────────────────────
+
+    private sealed record Monitor(string Name, PixelRect Bounds, PixelRect WorkingArea, bool Primary);
+
+    private static Monitor? Choose(params Monitor[] screens) =>
+        PopupPlacement.ChooseScreen(screens, s => s.Bounds, s => s.WorkingArea, s => s.Primary);
+
+    private static readonly PixelRect Left  = new(0, 0, 1920, 1080);
+    private static readonly PixelRect Right = new(1920, 0, 2560, 1440);
+
+    [Fact]
+    public void ChooseScreen_PanelOnSecondaryMonitor_GoesThere()
+    {
+        var chosen = Choose(
+            new Monitor("primary", Left, Left, true),
+            new Monitor("panel", Right, new PixelRect(1920, 0, 2560, 1392), false));
+        chosen!.Name.ShouldBe("panel");
+    }
+
+    [Fact]
+    public void ChooseScreen_PanelsEverywhere_PrefersPrimary()
+    {
+        var chosen = Choose(
+            new Monitor("secondary", Left, new PixelRect(0, 32, 1920, 1048), false),
+            new Monitor("primary", Right, new PixelRect(1920, 32, 2560, 1408), true));
+        chosen!.Name.ShouldBe("primary");
+    }
+
+    [Fact]
+    public void ChooseScreen_NoPanelInfo_Primary()
+    {
+        var chosen = Choose(new Monitor("secondary", Left, Left, false), new Monitor("primary", Right, Right, true));
+        chosen!.Name.ShouldBe("primary");
+    }
+
+    [Fact]
+    public void ChooseScreen_NoScreens_Null() => Choose().ShouldBeNull();
+}

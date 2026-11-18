@@ -93,13 +93,16 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
         File.WriteAllText(path, content);
     }
 
-    /// <summary>Exec= quoting: arguments with reserved characters in double quotes, with \ " ` $ escaped.</summary>
+    /// <summary>
+    /// Exec= quoting: arguments with reserved characters in double quotes, with \ " ` $ escaped;
+    /// % starts a field code (%f, %u …), so a literal % is written %%.
+    /// </summary>
     internal static string QuoteExec(string path)
     {
         if (path.All(c => char.IsAsciiLetterOrDigit(c) || "/._-+".Contains(c)))
             return path;
         var escaped = path.Replace(@"\", @"\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$");
         // In a desktop file, a literal backslash has to be escaped once more (string value level)
-        return "\"" + escaped.Replace(@"\", @"\\") + "\"";
+        return "\"" + escaped.Replace(@"\", @"\\").Replace("%", "%%") + "\"";
     }
 }

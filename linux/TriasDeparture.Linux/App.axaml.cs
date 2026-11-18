@@ -49,7 +49,8 @@ public partial class App : Application
         _tray = new TrayController(this, new GleiApiClient(http), new SettingsStore(LinuxPaths.SettingsFile), _updates.IsInstalled);
         _tray.Start();
 
-        Instance?.Listen(() => Dispatcher.UIThread.Post(() => _tray.ShowPopup()));
+        if (Instance?.Listen(() => Dispatcher.UIThread.Post(() => _tray.ShowPopup())) is { } problem)
+            Log.Warning("Running without single instance: {Problem}", problem);
         _updates.Start();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
