@@ -2,7 +2,8 @@
 # Trigger: push a tag like linux-v0.1.0  →  git tag linux-v0.1.0 && git push origin linux-v0.1.0
 #
 # Two stages, so a release is only published complete: first both architectures are tested, built and packed
-# (each on its own native runner); only when both succeeded, one job uploads them and publishes the release.
+# (each on its own native runner); only when both succeeded, one job uploads everything into a draft release
+# and publishes it with the very last upload.
 name: Linux release
 
 on:
@@ -53,6 +54,9 @@ jobs:
           dotnet publish linux/TriasDeparture.Linux -c Release -r "$RID" --self-contained true \
             -p:Version="$VERSION" -o "publish/$RID"
 
+          # The same build as .deb package (apt install / apt remove, no auto-update) – before vpk touches it
+          linux/packaging/build-deb.sh "$VERSION" "$RID" "publish/$RID"
+
           # Previous release of this channel → delta updates (before anything of this version is uploaded)
           vpk download github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$RID" -o "releases/$RID"
 
@@ -60,10 +64,6 @@ jobs:
             --packTitle glei --packAuthors "Matthias Geisriegler" \
             --icon linux/TriasDeparture.Linux/Assets/glei.png \
             --runtime "$RID" --channel "$RID" -o "releases/$RID"
-
-      # Same build as .deb package for apt install / apt remove (no auto-update)
-      - name: Build .deb
-        run: linux/packaging/build-deb.sh "$VERSION" "$RID"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -102,13 +102,20 @@ jobs:
           path: debs
           merge-multiple: true
 
+      # Everything goes into a draft first; only the last upload publishes it. A failure on the way leaves a
+      # draft nobody sees (and no AppImage client updates to it) – delete it and push the tag again.
       - name: Upload and publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          for rid in linux-x64 linux-arm64; do
-            vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$rid" -o "releases/releases-$rid" \
-              --publish --merge --releaseName "glei für Linux $VERSION" --tag "$GITHUB_REF_NAME"
-          done
-          gh release upload "$GITHUB_REF_NAME" debs/glei_*.deb --repo "${{ github.repository }}" --clobber
+          name="glei für Linux $VERSION"
+
+          vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel linux-x64 -o releases/releases-linux-x64 \
+            --merge --releaseName "$name" --tag "$GITHUB_REF_NAME"
+
+          gh release upload "$GITHUB_REF_NAME" debs/glei_*.deb --clobber
+
+          vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel linux-arm64 -o releases/releases-linux-arm64 \
+            --merge --publish --releaseName "$name" --tag "$GITHUB_REF_NAME"

@@ -55,6 +55,3 @@ logs/
 .DS_Store
 Thumbs.db
 Desktop.ini
-
-# ── Linux packages ────────────────────────────────────────────
-linux/packaging/out/

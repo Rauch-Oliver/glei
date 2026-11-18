@@ -326,14 +326,55 @@ public sealed class PackageTests : IDisposable
     }
 
     [Fact]
-    public void PackageAutostart_On_KeepsAUserEntryThatIsNoOverride()
+    public void PackageAutostart_On_KeepsAnEntryTheUserMadeHimself()
     {
         var desktop = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/opt/glei/glei");
         Directory.CreateDirectory(Path.GetDirectoryName(desktop.AutostartFile)!);
-        File.WriteAllText(desktop.AutostartFile, desktop.Entry(autostart: true));
+        const string own = "[Desktop Entry]\nType=Application\nName=glei\nExec=glei --my-flag\n";
+        File.WriteAllText(desktop.AutostartFile, own);
 
         desktop.ApplyPackageAutostart(true);
 
-        File.Exists(desktop.AutostartFile).ShouldBeTrue();
+        File.ReadAllText(desktop.AutostartFile).ShouldBe(own);
+    }
+
+    [Fact]
+    public void Package_RemovesEntriesLeftOverFromTheAppImage()
+    {
+        var appImage = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/home/me/glei.AppImage");
+        appImage.ApplyAutostart(true);
+        Directory.CreateDirectory(Path.GetDirectoryName(appImage.MenuFile)!);
+        File.WriteAllText(appImage.MenuFile, appImage.Entry(autostart: false));
+        Directory.CreateDirectory(Path.GetDirectoryName(appImage.IconFile)!);
+        File.WriteAllText(appImage.IconFile, "old icon");
+
+        var package = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/opt/glei/glei");
+        package.ApplyPackageAutostart(true);
+
+        File.Exists(package.AutostartFile).ShouldBeFalse(); // the system-wide entry applies now
+        File.Exists(package.MenuFile).ShouldBeFalse();
+        File.Exists(package.IconFile).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Package_AutostartOff_ReplacesTheAppImageEntryWithTheOverride()
+    {
+        var appImage = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/home/me/glei.AppImage");
+        appImage.ApplyAutostart(true);
+
+        var package = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/opt/glei/glei");
+        package.ApplyPackageAutostart(false);
+
+        File.ReadAllText(package.AutostartFile).ShouldBe(DesktopIntegration.AutostartOffOverride);
+    }
+
+    [Fact]
+    public void OwnFullEntry_IsRecognized_OverrideAndForeignEntriesAreNot()
+    {
+        var desktop = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/x/glei.AppImage");
+        DesktopIntegration.IsOwnFullEntry(desktop.Entry(autostart: true)).ShouldBeTrue();
+        DesktopIntegration.IsOwnFullEntry(desktop.Entry(autostart: false)).ShouldBeTrue();
+        DesktopIntegration.IsOwnFullEntry(DesktopIntegration.AutostartOffOverride).ShouldBeFalse();
+        DesktopIntegration.IsOwnFullEntry("[Desktop Entry]\nName=glei\nExec=glei\n").ShouldBeFalse();
     }
 }

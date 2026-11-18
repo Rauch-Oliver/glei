@@ -88,6 +88,7 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
     {
         try
         {
+            RemoveAppImageEntries();
             if (!enabled)
                 Write(AutostartFile, AutostartOffOverride);
             else if (File.Exists(AutostartFile) && File.ReadAllText(AutostartFile).Contains("Hidden=true"))
@@ -98,6 +99,30 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
             Log.Warning(ex, "Updating autostart failed");
         }
     }
+
+    /// <summary>
+    /// After switching from the AppImage to the .deb: per-user entries an AppImage glei wrote would shadow the
+    /// package's system-wide ones (and point at an AppImage that may be gone). Only files glei wrote are removed.
+    /// </summary>
+    private void RemoveAppImageEntries()
+    {
+        foreach (var file in new[] { AutostartFile, MenuFile })
+        {
+            if (File.Exists(file) && IsOwnFullEntry(File.ReadAllText(file)))
+            {
+                File.Delete(file);
+                Log.Information("Removed {File} left over from the AppImage", file);
+            }
+        }
+        // The package ships the icon; a per-user copy would shadow updates of it
+        if (File.Exists(IconFile))
+            File.Delete(IconFile);
+    }
+
+    /// <summary>A complete entry written by <see cref="Entry"/> (not the Hidden=true override, not something the user made).</summary>
+    internal static bool IsOwnFullEntry(string content) =>
+        content.Contains($"StartupWMClass={WindowClass}\n") && content.Contains("Comment=Live-Abfahrten für Bim und Bus in Graz\n")
+        && !content.Contains("Hidden=true");
 
     /// <summary>App-menu entry + icon, so glei can be found and started like any other app.</summary>
     public void InstallMenuEntry()
@@ -132,13 +157,18 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
         }
     }
 
+    /// <summary>Writes the icon when missing or different (an update may bring a new one).</summary>
     private void InstallIcon()
     {
-        if (File.Exists(IconFile)) return;
+        using var asset = AssetLoader.Open(new Uri("avares://glei/Assets/glei.png"));
+        using var buffer = new MemoryStream();
+        asset.CopyTo(buffer);
+        var png = buffer.ToArray();
+
+        if (File.Exists(IconFile) && File.ReadAllBytes(IconFile).AsSpan().SequenceEqual(png))
+            return;
         Directory.CreateDirectory(Path.GetDirectoryName(IconFile)!);
-        using var png = AssetLoader.Open(new Uri("avares://glei/Assets/glei.png"));
-        using var file = File.Create(IconFile);
-        png.CopyTo(file);
+        File.WriteAllBytes(IconFile, png);
     }
 
     private static void Write(string path, string content)

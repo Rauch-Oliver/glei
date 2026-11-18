@@ -70,7 +70,18 @@ Die App erkennt beim Start, wie sie installiert ist (`InstallKind`), und richtet
 | Updates | keine | Velopack aus GitHub Releases | neues Paket installieren |
 | Deinstallieren | – | AppImage + Einträge von Hand löschen | `sudo apt remove glei` |
 
-Das .deb ist self-contained (kein .NET nötig). Es installiert nach `/opt/glei`, mit `/usr/bin/glei` als Link. Abhängigkeiten sind die nativen Bibliotheken von .NET, Skia und X11 (ICU, OpenSSL, fontconfig, freetype, GLib, libX11/ICE/SM). Empfohlen werden `gnome-shell-extension-appindicator` und `libnotify-bin`. `postinst`/`postrm` aktualisieren nur die Menü- und Icon-Caches. Benutzerdaten (`~/.config/glei`, `~/.local/state/glei`) bleiben beim Deinstallieren liegen, wie bei Paketen üblich.
+Das .deb (`linux/packaging/build-deb.sh`):
+
+- **Inhalt:** self-contained (kein .NET nötig), installiert nach `/opt/glei`, mit `/usr/bin/glei` als Link. Im Release-Workflow wird dieselbe `dotnet publish`-Ausgabe verpackt wie im AppImage.
+- **Abhängigkeiten:** die nativen Bibliotheken von .NET, Skia und Avalonia.X11 (ICU, OpenSSL, fontconfig, freetype, GLib, libX11/ICE/SM/Xi/Xrandr/Xcursor/Xext/Xfixes).
+  - Empfohlen: `libnotify-bin` (Willkommens-Hinweis) und `libgl1`.
+  - Nur vorgeschlagen: `gnome-shell-extension-appindicator`. Als Empfehlung würde apt sonst auf KDE/Xfce/Cinnamon die ganze GNOME Shell mitinstallieren.
+- **Konfiguration:** `/etc/xdg/autostart/glei.desktop` ist als `conffile` markiert, Änderungen eines Admins überleben also Upgrades. `apt remove` lässt die Datei liegen, `apt purge` entfernt sie. `TryExec=/opt/glei/glei` sorgt dafür, dass eine liegengebliebene Datei nichts tut.
+- **Version:** aus dem Tag, `-` wird zu `~` (`0.2.0-beta.1` → `0.2.0~beta.1`), damit Vorabversionen vor der finalen sortieren.
+- **Kompression:** xz statt des zstd-Standards von Ubuntu, damit auch ältere dpkg-Versionen (Debian 11, Ubuntu 20.04) das Paket lesen können.
+- `postinst`/`postrm` aktualisieren nur die Menü- und Icon-Caches.
+- **Wechsel vom AppImage:** Als Paket entfernt glei beim Start die Einträge, die ein früheres AppImage pro Benutzer angelegt hat (Autostart, App-Menü, Icon), weil sie die Einträge des Pakets verdecken würden. Entfernt werden nur Dateien, die glei selbst geschrieben hat.
+- Benutzerdaten (`~/.config/glei`, `~/.local/state/glei`) bleiben beim Deinstallieren liegen, wie bei Paketen üblich.
 
 ## 3. Aktualisierung
 
@@ -127,8 +138,8 @@ linux/
 
 - **GitHub Actions** auf Tag `linux-v*`, z. B. `linux-v0.1.0` ([linux-release.yml](../.github/workflows/linux-release.yml)):
   1. **Packen**, je ein Job pro Architektur auf eigenem Runner (`linux-x64` auf `ubuntu-latest`, `linux-arm64` auf `ubuntu-24.04-arm`): `dotnet test`, `dotnet publish` (self-contained), `vpk download` (Vorversion für Delta-Updates), `vpk pack` → AppImage + Update-Pakete, ein Velopack-Kanal pro Architektur
-     Zusätzlich `linux/packaging/build-deb.sh` → `glei_<Version>_<amd64|arm64>.deb`
-  2. **Veröffentlichen**, erst wenn beide Architekturen gepackt sind: ein Job lädt beide Kanäle in ein gemeinsames GitHub Release „glei für Linux …“ hoch, dazu die beiden `.deb`. Schlägt eine Architektur fehl, wird nichts veröffentlicht
+     Aus derselben `publish`-Ausgabe zusätzlich `linux/packaging/build-deb.sh` → `glei_<Version>_<amd64|arm64>.deb`
+  2. **Veröffentlichen**, erst wenn beide Architekturen gepackt sind. Ein Job lädt alles in einen **Entwurf** „glei für Linux …“: x64-Kanal, dann die beiden `.deb`, zuletzt den arm64-Kanal. Erst dieser letzte Upload veröffentlicht. Schlägt vorher etwas fehl, bleibt nur ein unsichtbarer Entwurf (löschen, Tag neu pushen), und kein AppImage aktualisiert sich auf ein halbes Release.
 - **Auto-Update:** wie unter Windows. Velopack prüft beim Start (nach 30 s) und dann alle 24 h. Ein Update wird im Hintergrund geladen und ersetzt das AppImage beim Beenden.
 - Linux- und Windows-Releases sind getrennt (eigene Tags), die Versionen dürfen auseinanderlaufen.
 
