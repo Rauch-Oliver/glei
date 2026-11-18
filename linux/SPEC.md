@@ -16,9 +16,9 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 | Technik | .NET 10, [Avalonia](https://avaloniaui.net) 12 mit Fluent-Theme. Tray über Avalonias `TrayIcon` (StatusNotifierItem über D-Bus) |
 | Warum Avalonia | WPF gibt es nur unter Windows. Avalonia ist XAML/MVVM wie WPF, das ViewModel und die Logik lassen sich fast unverändert übernehmen |
 | Anzeige | X11 und Wayland (über XWayland) |
-| Verteilung | **AppImage** über **GitHub Releases**, gebaut von GitHub Actions, mit **Velopack** (inkl. Auto-Update) |
+| Verteilung | Über **GitHub Releases**, gebaut von GitHub Actions, in zwei Formen: **AppImage** mit **Velopack** (inkl. Auto-Update) und **.deb**-Paket (Installieren/Deinstallieren über apt bzw. App Center, ohne Auto-Update) |
 | Signierung | Keine (unter Linux nicht üblich) |
-| Installation | Keine: AppImage herunterladen, ausführbar machen, starten. Keine Root-Rechte |
+| Installation | AppImage: herunterladen, ausführbar machen, starten, keine Root-Rechte. .deb: `sudo apt install ./glei_….deb`, nach `/opt/glei`, deinstallieren mit `sudo apt remove glei` |
 | Ordner | `linux/` |
 | Oberfläche | Deutsch |
 
@@ -57,6 +57,20 @@ Die Linux-Variante der [Windows-Tray-App](../windows/SPEC.md). Funktionen, Verha
 - `Exec=` zeigt auf die AppImage-Datei (`$APPIMAGE`), nicht auf den temporären Mount-Ordner. Pfade mit Sonderzeichen werden nach der Desktop-Entry-Spezifikation gequotet (inkl. `%` → `%%`). Beide `.desktop`-Dateien werden bei jedem Start aktualisiert, falls das AppImage verschoben wurde.
 - Alle Einträge haben `StartupWMClass=glei` (die WM_CLASS der Fenster), damit das Dock die Fenster der App zuordnet und ihr Icon zeigt.
 - Nur das installierte AppImage trägt sich in Autostart und App-Menü ein, der Menüpunkt „Beim Anmelden starten“ ist in Entwicklungs-Builds ausgegraut. Ein Entwicklungs-Build legt nur einen **versteckten** Eintrag `glei-dev.desktop` (`NoDisplay=true`, kein Autostart) und das Icon an. Neuere GNOME-Versionen nehmen das Dock-Icon nur noch aus einem passenden `.desktop`-Eintrag, nicht mehr vom Fenster. Ist ein installiertes glei vorhanden, entfällt der Entwicklungs-Eintrag.
+
+### 2.4 Installationsarten
+
+Die App erkennt beim Start, wie sie installiert ist (`InstallKind`), und richtet sich danach:
+
+| | Entwicklung | AppImage (Velopack) | .deb-Paket |
+|---|---|---|---|
+| Erkennung | sonst | `UpdateManager.IsInstalled` | Datei `install-kind` mit Inhalt `deb` neben dem Programm |
+| App-Menü + Icon | nur versteckter `glei-dev.desktop` (fürs Dock-Icon) | legt die App pro Benutzer an (`~/.local/share/…`) | liefert das Paket (`/usr/share/applications`, `/usr/share/icons`) |
+| Autostart | nie | `~/.config/autostart/glei.desktop` anlegen/löschen | Paket liefert `/etc/xdg/autostart/glei.desktop`. Ausschalten = pro Benutzer `~/.config/autostart/glei.desktop` mit `Hidden=true`, Einschalten = diese Datei löschen |
+| Updates | keine | Velopack aus GitHub Releases | neues Paket installieren |
+| Deinstallieren | – | AppImage + Einträge von Hand löschen | `sudo apt remove glei` |
+
+Das .deb ist self-contained (kein .NET nötig). Es installiert nach `/opt/glei`, mit `/usr/bin/glei` als Link. Abhängigkeiten sind die nativen Bibliotheken von .NET, Skia und X11 (ICU, OpenSSL, fontconfig, freetype, GLib, libX11/ICE/SM). Empfohlen werden `gnome-shell-extension-appindicator` und `libnotify-bin`. `postinst`/`postrm` aktualisieren nur die Menü- und Icon-Caches. Benutzerdaten (`~/.config/glei`, `~/.local/state/glei`) bleiben beim Deinstallieren liegen, wie bei Paketen üblich.
 
 ## 3. Aktualisierung
 
@@ -113,14 +127,15 @@ linux/
 
 - **GitHub Actions** auf Tag `linux-v*`, z. B. `linux-v0.1.0` ([linux-release.yml](../.github/workflows/linux-release.yml)):
   1. **Packen**, je ein Job pro Architektur auf eigenem Runner (`linux-x64` auf `ubuntu-latest`, `linux-arm64` auf `ubuntu-24.04-arm`): `dotnet test`, `dotnet publish` (self-contained), `vpk download` (Vorversion für Delta-Updates), `vpk pack` → AppImage + Update-Pakete, ein Velopack-Kanal pro Architektur
-  2. **Veröffentlichen**, erst wenn beide Architekturen gepackt sind: ein Job lädt beide Kanäle in ein gemeinsames GitHub Release „glei für Linux …“ hoch. Schlägt eine Architektur fehl, wird nichts veröffentlicht
+     Zusätzlich `linux/packaging/build-deb.sh` → `glei_<Version>_<amd64|arm64>.deb`
+  2. **Veröffentlichen**, erst wenn beide Architekturen gepackt sind: ein Job lädt beide Kanäle in ein gemeinsames GitHub Release „glei für Linux …“ hoch, dazu die beiden `.deb`. Schlägt eine Architektur fehl, wird nichts veröffentlicht
 - **Auto-Update:** wie unter Windows. Velopack prüft beim Start (nach 30 s) und dann alle 24 h. Ein Update wird im Hintergrund geladen und ersetzt das AppImage beim Beenden.
 - Linux- und Windows-Releases sind getrennt (eigene Tags), die Versionen dürfen auseinanderlaufen.
 
 ## 8. Nicht im Umfang (v1)
 
 - Wie unter Windows: mehrere Favoriten, „towards“, Benachrichtigungen zu Abfahrten
-- Pakete für Distributionen (`.deb`, `.rpm`), Flatpak/Flathub, Snap, AUR
+- Weitere Paketformate (`.rpm`, Flatpak/Flathub, Snap, AUR) und ein apt-Repository (für Updates des .deb)
 - Natives Wayland (Avalonia läuft über XWayland) und XEmbed-Trays ohne StatusNotifierItem
 - macOS
 

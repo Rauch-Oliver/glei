@@ -20,7 +20,7 @@ public sealed class TrayController : IDisposable
     private readonly Application _app;
     private readonly IGleiApi _api;
     private readonly SettingsStore _store;
-    private readonly bool _isInstalled;
+    private readonly InstallKind _install;
     private readonly AppSettings _settings;
     private readonly FavoriteMonitor _monitor;
     private readonly SessionEvents _session = new();
@@ -32,12 +32,12 @@ public sealed class TrayController : IDisposable
     private TrayView? _shown;
     private bool _lightPanel;
 
-    public TrayController(Application app, IGleiApi api, SettingsStore store, bool isInstalled)
+    public TrayController(Application app, IGleiApi api, SettingsStore store, InstallKind install)
     {
         _app         = app;
         _api         = api;
         _store       = store;
-        _isInstalled = isInstalled;
+        _install     = install;
         _settings    = store.Load();
         _monitor     = new FavoriteMonitor(api);
     }
@@ -68,18 +68,23 @@ public sealed class TrayController : IDisposable
         _session.LockChanged  += OnLockChanged;
         _ = _session.StartAsync();
 
-        // Installed (AppImage): keep autostart and app-menu entry pointing at the current AppImage.
+        // AppImage: keep autostart and app-menu entry pointing at the current AppImage.
+        // .deb: the package owns menu entry and autostart; only the per-user "off" override is ours.
         // Development builds never register autostart or a menu entry, only a hidden entry for the dock icon.
         if (DesktopIntegration.ForCurrentUser() is { } desktop)
         {
-            if (_isInstalled)
+            switch (_install)
             {
-                desktop.ApplyAutostart(_settings.StartWithWindows);
-                desktop.InstallMenuEntry();
-            }
-            else
-            {
-                desktop.InstallDevelopmentEntry();
+                case InstallKind.AppImage:
+                    desktop.ApplyAutostart(_settings.StartWithWindows);
+                    desktop.InstallMenuEntry();
+                    break;
+                case InstallKind.Package:
+                    desktop.ApplyPackageAutostart(_settings.StartWithWindows);
+                    break;
+                default:
+                    desktop.InstallDevelopmentEntry();
+                    break;
             }
         }
 
@@ -153,14 +158,16 @@ public sealed class TrayController : IDisposable
         {
             ToggleType = MenuItemToggleType.CheckBox,
             IsChecked  = _settings.StartWithWindows,
-            IsEnabled  = _isInstalled
+            IsEnabled  = _install != InstallKind.Development
         };
         autostart.Click += (_, _) =>
         {
             autostart.IsChecked = !autostart.IsChecked;
             _settings.StartWithWindows = autostart.IsChecked;
             _store.Save(_settings);
-            DesktopIntegration.ForCurrentUser()?.ApplyAutostart(autostart.IsChecked);
+            if (DesktopIntegration.ForCurrentUser() is not { } desktop) return;
+            if (_install == InstallKind.Package) desktop.ApplyPackageAutostart(autostart.IsChecked);
+            else desktop.ApplyAutostart(autostart.IsChecked);
         };
 
         var info = new NativeMenuItem("Info");

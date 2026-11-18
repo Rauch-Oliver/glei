@@ -289,3 +289,51 @@ public sealed class LinuxRobustnessTests : IDisposable
     [Fact]
     public void ChooseScreen_NoScreens_Null() => Choose().ShouldBeNull();
 }
+
+public sealed class PackageTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "glei-linux-tests-" + Guid.NewGuid().ToString("N"));
+
+    public PackageTests() => Directory.CreateDirectory(_dir);
+
+    public void Dispose() => Directory.Delete(_dir, recursive: true);
+
+    [Fact]
+    public void InstallKind_Velopack_IsAppImage() =>
+        InstallKinds.Detect(velopackInstalled: true, _dir).ShouldBe(InstallKind.AppImage);
+
+    [Fact]
+    public void InstallKind_DebMarker_IsPackage()
+    {
+        File.WriteAllText(Path.Combine(_dir, InstallKinds.MarkerFile), "deb\n");
+        InstallKinds.Detect(velopackInstalled: false, _dir).ShouldBe(InstallKind.Package);
+    }
+
+    [Fact]
+    public void InstallKind_NoMarker_IsDevelopment() =>
+        InstallKinds.Detect(velopackInstalled: false, _dir).ShouldBe(InstallKind.Development);
+
+    [Fact]
+    public void PackageAutostart_OffWritesHiddenOverride_OnRemovesIt()
+    {
+        var desktop = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/opt/glei/glei");
+
+        desktop.ApplyPackageAutostart(false);
+        File.ReadAllText(desktop.AutostartFile).ShouldContain("Hidden=true");
+
+        desktop.ApplyPackageAutostart(true);
+        File.Exists(desktop.AutostartFile).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void PackageAutostart_On_KeepsAUserEntryThatIsNoOverride()
+    {
+        var desktop = new DesktopIntegration(Path.Combine(_dir, "config"), Path.Combine(_dir, "data"), "/opt/glei/glei");
+        Directory.CreateDirectory(Path.GetDirectoryName(desktop.AutostartFile)!);
+        File.WriteAllText(desktop.AutostartFile, desktop.Entry(autostart: true));
+
+        desktop.ApplyPackageAutostart(true);
+
+        File.Exists(desktop.AutostartFile).ShouldBeTrue();
+    }
+}

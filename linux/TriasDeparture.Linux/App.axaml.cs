@@ -46,7 +46,9 @@ public partial class App : Application
         http.DefaultRequestHeaders.UserAgent.ParseAdd($"glei-linux/{AppInfo.Version}");
 
         _updates = new UpdateService();
-        _tray = new TrayController(this, new GleiApiClient(http), new SettingsStore(LinuxPaths.SettingsFile), _updates.IsInstalled);
+        var install = InstallKinds.Detect(_updates.IsInstalled);
+        Log.Information("Install kind: {Kind}", install);
+        _tray = new TrayController(this, new GleiApiClient(http), new SettingsStore(LinuxPaths.SettingsFile), install);
         _tray.Start();
 
         if (Instance?.Listen(() => Dispatcher.UIThread.Post(() => _tray.ShowPopup())) is { } problem)

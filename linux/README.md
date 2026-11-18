@@ -18,16 +18,34 @@ Die Daten kommen von der glei API (`api/`). Die Spezifikation steht in [SPEC.md]
 
 ## Installieren
 
-1. Unter [Releases](https://github.com/geisi93/glei/releases) die neueste Version **„glei für Linux …“** öffnen und das `.AppImage` für deine Architektur laden (`linux-x64` bzw. `linux-arm64`).
+Unter [Releases](https://github.com/geisi93/glei/releases) die neueste Version **„glei für Linux …“** öffnen. Es gibt glei auf zwei Arten:
+
+### Als Paket (.deb) – Ubuntu, Debian, Mint, Pop!_OS …
+
+Installieren und Deinstallieren wie bei jeder anderen App, aber **ohne automatische Updates** (für eine neue Version das neue Paket installieren).
+
+```bash
+sudo apt install ./glei_0.1.0_amd64.deb     # bzw. _arm64.deb; oder Doppelklick → App Center
+sudo apt remove glei                         # deinstallieren
+```
+
+glei steht danach im App-Menü und startet bei jeder Anmeldung (abschaltbar im Menü: „Beim Anmelden starten“). Zum ersten Mal starten: im App-Menü **glei** wählen oder abmelden und wieder anmelden.
+
+### Als AppImage – jede Distribution, mit automatischen Updates
+
+Braucht **FUSE 2** (`sudo apt install libfuse2t64`, auf älteren Ubuntus `libfuse2`).
+
+1. Das `.AppImage` für deine Architektur laden (`linux-x64` bzw. `linux-arm64`) und an einen festen Ort legen, z. B. `~/Applications/`. Autostart und Menüeintrag zeigen auf genau diese Datei.
 2. Ausführbar machen und starten:
    ```bash
    chmod +x glei*.AppImage
    ./glei*.AppImage
    ```
-   Am besten vorher an einen festen Ort legen (z. B. `~/Applications/`) – Autostart und Menüeintrag zeigen auf genau diese Datei.
 3. glei legt beim ersten Start einen Eintrag im App-Menü an, startet ab dann bei jeder Anmeldung mit, und öffnet einmalig gleich das Fenster, damit du deine Haltestelle wählen kannst. Updates lädt es selbst aus GitHub Releases und spielt sie beim nächsten Start ein.
 
-**Kein Symbol zu sehen?** Unter GNOME ohne die AppIndicator-Erweiterung gibt es keinen Tray. Erweiterung installieren/aktivieren, abmelden und wieder anmelden.
+**Deinstallieren (AppImage):** glei beenden, das AppImage löschen, außerdem `~/.config/autostart/glei.desktop`, `~/.local/share/applications/glei.desktop` und `~/.local/share/icons/hicolor/256x256/apps/glei.png`.
+
+**Kein Symbol zu sehen?** Unter GNOME ohne die AppIndicator-Erweiterung gibt es keinen Tray. Erweiterung installieren/aktivieren (`sudo apt install gnome-shell-extension-appindicator`), abmelden und wieder anmelden.
 
 ## Bedienung
 
@@ -40,9 +58,7 @@ Die Daten kommen von der glei API (`api/`). Die Spezifikation steht in [SPEC.md]
 | `Esc` | Einen Schritt zurück, beim zweiten Mal Fenster schließen |
 | Menü | Öffnen · Aktualisieren · Beim Anmelden starten · Info · Beenden |
 
-Gespeichert wird nur in `~/.config/glei/settings.json` (Favorit, letzte Haltestellen; gleiches Format wie unter Windows). Das Log liegt in `~/.local/state/glei/logs/`. Eine installierte Version legt außerdem `~/.config/autostart/glei.desktop`, `~/.local/share/applications/glei.desktop` und das Icon unter `~/.local/share/icons/hicolor/256x256/apps/glei.png` an.
-
-**Deinstallieren:** glei beenden, das AppImage und die oben genannten Dateien löschen.
+Gespeichert wird nur in `~/.config/glei/settings.json` (Favorit, letzte Haltestellen; gleiches Format wie unter Windows). Das Log liegt in `~/.local/state/glei/logs/`. Beim Deinstallieren bleiben diese beiden (wie bei anderen Apps) liegen; wer sie nicht mehr braucht, löscht `~/.config/glei` und `~/.local/state/glei`.
 
 ## Entwickeln
 
@@ -51,7 +67,14 @@ dotnet run --project linux/TriasDeparture.Linux
 dotnet test linux/TriasDeparture.Linux.Tests
 ```
 
-Eine lokale Version zum Testen, ohne AppImage:
+Das `.deb` lokal bauen (braucht nur `dpkg-deb`, ist bei Debian/Ubuntu dabei):
+
+```bash
+linux/packaging/build-deb.sh 0.1.0 linux-x64          # → linux/packaging/out/glei_0.1.0_amd64.deb
+sudo apt install ./linux/packaging/out/glei_0.1.0_amd64.deb
+```
+
+Eine lokale Version zum Testen, ohne Paket:
 
 ```bash
 dotnet publish linux/TriasDeparture.Linux -c Release -r linux-x64 --self-contained false -o linux/publish
@@ -74,4 +97,4 @@ git tag linux-v0.1.0
 git push origin linux-v0.1.0
 ```
 
-GitHub Actions ([linux-release.yml](../.github/workflows/linux-release.yml)) testet, baut x64 und ARM64 (self-contained), packt beides mit [Velopack](https://velopack.io) als AppImage und legt das GitHub Release an. Die Version kommt aus dem Tag.
+GitHub Actions ([linux-release.yml](../.github/workflows/linux-release.yml)) testet, baut x64 und ARM64 (self-contained), packt beides mit [Velopack](https://velopack.io) als AppImage und zusätzlich als `.deb`, und legt das GitHub Release an – erst, wenn beide Architekturen fertig sind. Die Version kommt aus dem Tag.

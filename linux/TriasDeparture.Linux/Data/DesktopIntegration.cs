@@ -77,6 +77,28 @@ public sealed class DesktopIntegration(string configHome, string dataHome, strin
         }
     }
 
+    /// <summary>Per-user override that switches off the package's system-wide autostart entry (XDG Autostart: Hidden=true).</summary>
+    public const string AutostartOffOverride = "[Desktop Entry]\nType=Application\nName=glei\nHidden=true\n";
+
+    /// <summary>
+    /// .deb install: the package's /etc/xdg/autostart/glei.desktop starts glei; a ~/.config/autostart/glei.desktop
+    /// with Hidden=true switches it off for this user.
+    /// </summary>
+    public void ApplyPackageAutostart(bool enabled)
+    {
+        try
+        {
+            if (!enabled)
+                Write(AutostartFile, AutostartOffOverride);
+            else if (File.Exists(AutostartFile) && File.ReadAllText(AutostartFile).Contains("Hidden=true"))
+                File.Delete(AutostartFile);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Log.Warning(ex, "Updating autostart failed");
+        }
+    }
+
     /// <summary>App-menu entry + icon, so glei can be found and started like any other app.</summary>
     public void InstallMenuEntry()
     {

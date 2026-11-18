@@ -61,10 +61,20 @@ jobs:
             --icon linux/TriasDeparture.Linux/Assets/glei.png \
             --runtime "$RID" --channel "$RID" -o "releases/$RID"
 
+      # Same build as .deb package for apt install / apt remove (no auto-update)
+      - name: Build .deb
+        run: linux/packaging/build-deb.sh "$VERSION" "$RID"
+
       - uses: actions/upload-artifact@v4
         with:
           name: releases-${{ matrix.rid }}
           path: releases/${{ matrix.rid }}
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.rid }}
+          path: linux/packaging/out/glei_*.deb
           if-no-files-found: error
 
   release:
@@ -86,6 +96,12 @@ jobs:
           pattern: releases-*
           path: releases
 
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: deb-*
+          path: debs
+          merge-multiple: true
+
       - name: Upload and publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,3 +111,4 @@ jobs:
             vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$rid" -o "releases/releases-$rid" \
               --publish --merge --releaseName "glei für Linux $VERSION" --tag "$GITHUB_REF_NAME"
           done
+          gh release upload "$GITHUB_REF_NAME" debs/glei_*.deb --repo "${{ github.repository }}" --clobber

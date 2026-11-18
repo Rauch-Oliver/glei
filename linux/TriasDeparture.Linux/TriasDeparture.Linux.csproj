@@ -35,6 +35,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Linux-only app: Unix file modes, Unix sockets, … are fine everywhere in here -->
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>linux</_Parameter1>
+    </AssemblyAttribute>
     <InternalsVisibleTo Include="TriasDeparture.Linux.Tests" />
   </ItemGroup>
 
