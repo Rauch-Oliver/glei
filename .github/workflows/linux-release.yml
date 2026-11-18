@@ -1,0 +1,63 @@
+# Builds the Linux tray app and publishes it as AppImage in a GitHub Release.
+# Trigger: push a tag like linux-v0.1.0  →  git tag linux-v0.1.0 && git push origin linux-v0.1.0
+name: Linux release
+
+on:
+  push:
+    tags: ['linux-v*']
+
+permissions:
+  contents: write   # create the release and upload the assets
+
+env:
+  VPK_VERSION: 1.2.161   # keep in sync with the Velopack package in TriasDeparture.Linux.csproj
+  REPO_URL: https://github.com/${{ github.repository }}
+
+jobs:
+  release:
+    strategy:
+      # One after the other: both jobs upload into the same release
+      max-parallel: 1
+      matrix:
+        include:
+          - rid: linux-x64
+            runner: ubuntu-latest
+          - rid: linux-arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#linux-v}" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: dotnet test linux/TriasDeparture.Linux.Tests -c Release
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version "$VPK_VERSION"
+
+      # One Velopack channel per architecture; the installed app updates from the channel it came from
+      - name: Publish, pack and upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RID: ${{ matrix.rid }}
+        run: |
+          set -euo pipefail
+          dotnet publish linux/TriasDeparture.Linux -c Release -r "$RID" --self-contained true \
+            -p:Version="$VERSION" -o "publish/$RID"
+
+          # Previous release of this channel → delta updates
+          vpk download github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$RID" -o "releases/$RID"
+
+          vpk pack --packId glei --packVersion "$VERSION" --packDir "publish/$RID" --mainExe glei \
+            --packTitle glei --packAuthors "Matthias Geisriegler" \
+            --icon linux/TriasDeparture.Linux/Assets/glei.png \
+            --runtime "$RID" --channel "$RID" -o "releases/$RID"
+
+          vpk upload github --repoUrl "$REPO_URL" --token "$GITHUB_TOKEN" --channel "$RID" -o "releases/$RID" \
+            --publish --merge --releaseName "glei für Linux $VERSION" --tag "$GITHUB_REF_NAME"
