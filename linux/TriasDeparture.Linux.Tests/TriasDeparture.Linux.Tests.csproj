@@ -9,6 +9,10 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <!-- Tests a Linux-only app (CA1416 would flag every call otherwise) -->
+    <AssemblyAttribute Include="System.Runtime.Versioning.SupportedOSPlatformAttribute">
+      <_Parameter1>linux</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <!-- The Windows tests cover the shared (linked) logic; running them here checks it on Linux too -->
