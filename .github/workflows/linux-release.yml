@@ -1,4 +1,4 @@
-# Builds the Linux tray app and publishes it as AppImage in a GitHub Release.
+# Builds the Linux tray app and publishes it as AppImage and .deb in a GitHub Release.
 # Trigger: push a tag like linux-v0.1.0  →  git tag linux-v0.1.0 && git push origin linux-v0.1.0
 #
 # Two stages, so a release is only published complete: first both architectures are tested, built and packed
