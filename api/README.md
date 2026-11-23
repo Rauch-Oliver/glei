@@ -52,7 +52,11 @@ Erstelle `api/TriasDeparture.Api/appsettings.Development.json` (wird per `.gitig
 dotnet run --project api/TriasDeparture.Api
 ```
 
-Swagger UI ist unter `http://localhost:<port>/` erreichbar (nur Development).
+Swagger UI ist unter `http://localhost:<port>/swagger` erreichbar (nur Development).
+
+## Web-App
+
+Das Docker-Image baut zusätzlich [`web/`](../web) und legt es nach `wwwroot`. Die API liefert die App unter `/` aus, vor dem Rate Limiting: Seitendateien zählen nicht zum Kontingent.
 
 ## Docker
 
@@ -67,7 +71,7 @@ docker run -p 8080:8080 \
 
 ## Deployment
 
-Google Cloud Run (Service `glei`, Region `europe-west1`), automatisch bei jedem Push auf `main`, der `api/**` oder `core/**` ändert.
+Google Cloud Run (Service `glei`, Region `europe-west1`), automatisch bei jedem Push auf `main`, der `api/**`, `core/**` oder `web/**` ändert.
 
 ## Technologiestack
 

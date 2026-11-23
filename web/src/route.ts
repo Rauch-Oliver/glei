@@ -7,12 +7,16 @@ import { useEffect, useState } from 'preact/hooks';
 
 export type Route =
   | { page: 'home' }
+  | { page: 'impressum' }
+  | { page: 'datenschutz' }
   | { page: 'stop'; stopId: string; name: string; keys: string[] }
   | { page: 'monitor'; stopId: string; name: string; keys: string[] };
 
 export function parse(hash: string): Route {
   const [path, query = ''] = hash.replace(/^#/, '').split('?');
   const params = new URLSearchParams(query);
+  if (path === '/impressum') return { page: 'impressum' };
+  if (path === '/datenschutz') return { page: 'datenschutz' };
   const m = /^\/(stop|monitor)\/(.+)$/.exec(path);
   if (!m) return { page: 'home' };
   const keys = (params.get('l') ?? '').split(',').filter(Boolean);

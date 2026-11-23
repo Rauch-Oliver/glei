@@ -4,6 +4,8 @@
 **/out/
 **/publish/
 **/artifacts/
+**/node_modules/
+web/dist/
 
 # ── Tests / coverage output ───────────────────────────────────
 **/TestResults/

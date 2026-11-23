@@ -96,6 +96,7 @@ export function Monitor({ stopId, name, keys }: Props) {
       <p class="monitor-foot">
         {stale ? `offline · Stand ${clock(updated!)}` : updated ? `Stand ${clock(updated)} · aktualisiert alle 30 s` : ''}
         {' · '}<span class="rt-dot" /> Echtzeit
+        {' · '}<a href="#/impressum">Impressum</a>
       </p>
     </main>
   );
