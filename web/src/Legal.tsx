@@ -18,8 +18,9 @@ export function Impressum() {
 
         <h2>Datenquelle</h2>
         <p>
-          Fahrplan- und Echtzeitdaten: <a href="https://www.verbundlinie.at" target="_blank" rel="noopener">Verbund Linie</a> (Steirischer
-          Verkehrsverbund), TRIAS-Schnittstelle. glei ist kein Angebot der Verbund Linie oder der Holding Graz.
+          Fahrplan- und Echtzeitdaten aus der öffentlichen OGD-TRIAS-Schnittstelle für die Steiermark. glei ist ein
+          privates Projekt. Es ist keine Zusammenarbeit mit dem Verkehrsverbund und kein Angebot eines
+          Verkehrsunternehmens.
         </p>
 
         <h2>Haftung</h2>
@@ -60,7 +61,7 @@ export function Datenschutz() {
 
         <h2>Abfrage der Abfahrten</h2>
         <p>
-          Suchbegriffe und Haltestellen leitet unser Server an die Schnittstelle der Verbund Linie weiter. Deine
+          Suchbegriffe und Haltestellen leitet unser Server an die OGD-TRIAS-Schnittstelle weiter. Deine
           IP-Adresse wird dabei nicht weitergegeben.
         </p>
 

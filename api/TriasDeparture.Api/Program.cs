@@ -42,7 +42,7 @@ try
         {
             Title       = "glei",
             Version     = "v1",
-            Description = "Live departures from the Verbund Linie TRIAS interface"
+            Description = "Live departures from the Styrian OGD TRIAS interface"
         });
         // Include XML documentation comments
         var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
