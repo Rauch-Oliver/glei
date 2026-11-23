@@ -54,7 +54,7 @@ public sealed class InfoWindow : Window
                 new TextBlock { Text = "glei", FontSize = 20, FontWeight = FontWeights.SemiBold },
                 new TextBlock { Text = $"Version {AppInfo.Version}", Opacity = 0.65, Margin = new Thickness(0, 2, 0, 12) },
                 new TextBlock { Text = "Live-Abfahrten für Bim und Bus in Graz." },
-                new TextBlock { Text = "Daten: Verbund Linie (TRIAS)", Margin = new Thickness(0, 4, 0, 0) },
+                new TextBlock { Text = "Daten: OGD-TRIAS-Schnittstelle Steiermark", Margin = new Thickness(0, 4, 0, 0) },
                 new TextBlock(link) { Margin = new Thickness(0, 4, 0, 20) },
                 ok
             }

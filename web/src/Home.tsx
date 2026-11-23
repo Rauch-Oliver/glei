@@ -97,7 +97,7 @@ export function Home() {
       )}
 
       <footer class="foot">
-        Daten: <a href="https://www.verbundlinie.at" target="_blank" rel="noopener">Verbund Linie</a> (TRIAS) ·
+        Daten: offene Fahrplandaten der Steiermark (OGD, TRIAS) ·
         Deine Monitore werden nur in diesem Browser gespeichert.
         <br /><a href="#/impressum">Impressum</a> · <a href="#/datenschutz">Datenschutz</a>
       </footer>
