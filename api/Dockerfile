@@ -1,5 +1,13 @@
 # Build context is the repository root: docker build -f api/Dockerfile .
 
+# ── Web app (served by the API from wwwroot) ───────────────────────────────────
+FROM node:22-alpine AS web
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+RUN npm run build
+
 # ── Build stage ────────────────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /repo
@@ -31,6 +39,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 COPY --from=build /app/publish .
+COPY --from=web /web/dist ./wwwroot
 
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080

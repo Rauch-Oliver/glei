@@ -8,6 +8,7 @@ Live-Abfahrten für Bus und Bim in der Steiermark („Der 3er kommt glei.“) au
 |--------|--------|
 | [`core/`](core) | Gemeinsamer TRIAS-Code: Modelle, Services, TRIAS-Client (XML-Builder/-Parser, Caching) + Tests |
 | [`api/`](api) | REST API – [Doku](api/README.md) |
+| [`web/`](web) | Web-App: Haltestellenmonitor im Stil der Grazer Anzeigen (Preact + Vite), wird von der API unter `/` ausgeliefert |
 | [`alexa/`](alexa) | Alexa-Skill („Alexa, frag Bim Graz …“) – [Einrichtung](alexa/README.md) |
 | [`windows/`](windows) | Tray-App für Windows: Minuten bis zur nächsten Abfahrt im Infobereich – [Doku](windows/README.md) |
 
@@ -39,6 +40,14 @@ dotnet test
 ```
 
 Voraussetzung: .NET 10 SDK. Tests: xUnit + Shouldly.
+
+Web-App (Node 20+), `/api` wird an die öffentliche API weitergeleitet (`GLEI_API=http://localhost:5000` für eine lokale):
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 ## Lizenz
 

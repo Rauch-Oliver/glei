@@ -57,17 +57,26 @@ try
 
     app.UseForwardedHeaders();
     app.UseExceptionHandler();
+
+    // ── Web app (web/, copied to wwwroot by the Dockerfile) ─────────────────
+    // Served before logging and rate limiting: page assets don't count against the API quota.
+    // Vite puts content hashes into asset names, so those can be cached forever; index.html never.
+    app.UseDefaultFiles();
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        OnPrepareResponse = ctx => ctx.Context.Response.Headers.CacheControl =
+            ctx.Context.Request.Path.StartsWithSegments("/assets")
+                ? "public, max-age=31536000, immutable"
+                : "no-cache"
+    });
+
     app.UseSerilogRequestLogging();
     app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI(c =>
-        {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "glei v1");
-            c.RoutePrefix = string.Empty; // Swagger at root
-        });
+        app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "glei v1")); // at /swagger
     }
 
     app.UseHttpsRedirection();
@@ -79,7 +88,7 @@ try
         Log.Information("glei running on {Urls} ({Environment}) - TRIAS: {TriasUrl}",
             string.Join(", ", app.Urls), app.Environment.EnvironmentName, builder.Configuration["Trias:BaseUrl"]);
         if (app.Environment.IsDevelopment())
-            Log.Information("Swagger UI: {SwaggerUrl}", app.Urls.First());
+            Log.Information("Swagger UI: {SwaggerUrl}/swagger", app.Urls.First());
     });
 
     app.Run();
