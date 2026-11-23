@@ -11,6 +11,7 @@ Live-Abfahrten für Bus und Bim in der Steiermark („Der 3er kommt glei.“) au
 | [`web/`](web) | Web-App: Haltestellenmonitor im Stil der Grazer Anzeigen (Preact + Vite), wird von der API unter `/` ausgeliefert |
 | [`alexa/`](alexa) | Alexa-Skill („Alexa, frag Bim Graz …“) – [Einrichtung](alexa/README.md) |
 | [`windows/`](windows) | Tray-App für Windows: Minuten bis zur nächsten Abfahrt im Infobereich – [Doku](windows/README.md) |
+| [`linux/`](linux) | Dieselbe Tray-App für Linux (Avalonia, AppImage) – [Doku](linux/README.md) |
 
 ```
 api/TriasDeparture.Api            (Controller, Program.cs, Swagger)
