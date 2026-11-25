@@ -123,10 +123,11 @@ struct DepartureRow: View {
     let departure: Departure
     let now: Date
     var showsDestination = true
+    var compact = false
 
     var body: some View {
         HStack {
-            LineBadge(line: departure.line, mode: departure.mode)
+            LineBadge(line: departure.line, mode: departure.mode, compact: compact)
             if showsDestination { Text(shortName(departure.destination)).lineLimit(1) }
             Spacer(minLength: 0)
             Text(minutesText([departure], now: now)).bold().monospacedDigit()
@@ -139,6 +140,8 @@ struct DepartureRow: View {
 struct LineBadge: View {
     let line: String
     let mode: String?
+    /// Smaller for widgets, so 3 rows fit inside the standard 16 pt margins.
+    var compact = false
     /// Tinted or clear Home Screen: no fills, they'd turn into solid blocks.
     @Environment(\.widgetRenderingMode) private var renderingMode
 
@@ -146,9 +149,9 @@ struct LineBadge: View {
         let night = line.hasPrefix("N")
         let filled = night && renderingMode == .fullColor
         Text(line)
-            .font(.subheadline.weight(.heavy))
+            .font((compact ? Font.caption : .subheadline).weight(.heavy))
             .foregroundStyle(filled ? .white : .primary)
-            .frame(minWidth: 34, minHeight: 22)
+            .frame(minWidth: compact ? 28 : 34, minHeight: compact ? 18 : 22)
             .background(filled ? Color.blue : .clear, in: .rect(cornerRadius: 4))
             .overlay { if mode != "tram" && !filled { RoundedRectangle(cornerRadius: 4).stroke(lineWidth: 1.5) } }
             .accessibilityLabel(lineName(line))

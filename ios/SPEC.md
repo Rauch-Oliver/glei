@@ -44,13 +44,14 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 
 - **Karten:** eine pro Pin, in der Reihenfolge des Anheftens. Kopf: Haltestelle (ohne „Graz “) und „Alle Linien“ bzw. „4er → Liebenau“. Darunter die nächsten 3 Abfahrten: Linie als Badge, Ziel, Minuten (`jetzt` bei 0).
   - Bei einer einzelnen Linie fällt das Ziel weg, es steht schon im Kopf.
-  - Abruf alle 60 s, die Minuten werden jede volle Minute lokal neu berechnet.
+  - Abruf aller Karten gemeinsam alle 60 s und sofort, wenn ein Pin dazukommt oder wegfällt. Die Minuten werden jede volle Minute lokal neu berechnet.
   - **Offline:** ohne Daten „Keine Verbindung“, mit alten Daten zusätzlich „Stand 19:39 · offline“ (orange).
 - **Anheften (＋):** ein Sheet mit Haltestellensuche (ab 2 Zeichen, 300 ms Debounce, `GET /api/stops/search`). Eine Haltestelle öffnet die Linienauswahl:
   - **„Alle Linien“**, oder
   - **eine Linie in eine Richtung**, aus den gerade fahrenden Abfahrten nach Linie und Richtung gruppiert, beschriftet mit dem häufigsten Ziel („3 → Andritz · 4 · 11 · 19 min“).
   - Tippen heftet an und schließt das Sheet. Ein schon vorhandener Pin wird nicht doppelt angelegt.
-- **Entfernen:** Karte nach links wischen → „Entfernen“.
+- **Aktualisieren:** Liste nach unten ziehen. Lädt alle Karten neu (der Indikator bleibt, bis alle geantwortet haben) und lädt auch die Widgets neu. Dasselbe in der Linienauswahl.
+- **Entfernen:** Karte nach links wischen oder lange drücken → „Entfernen“.
 - **Leer:** „Noch nichts angeheftet – Mit + eine Haltestelle suchen und anheften. Jedes Widget zeigt eine davon.“
 - **Liniensymbole** wie auf den Grazer Haltestellenschildern: Bim ohne Rahmen, Bus mit Rahmen, Nachtlinien (`N…`) blau hinterlegt.
 
@@ -74,7 +75,8 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 | **Widget: Daten abrufen** (Netz) | nach 15 min, oder früher, wenn nur noch 2 der abgerufenen Abfahrten übrig sind. Nach einem Fehler nach 5 min | Timeline-Policy `.after(…)` |
 | **Widget: Minuten neu berechnen** (lokal) | jede Minute | ein Timeline-Eintrag pro Minute aus einem Abruf |
 | **Widget: Pins geändert** | sofort | `WidgetCenter.reloadAllTimelines()` aus der App |
-| **App: Karten** | alle 60 s, solange sichtbar | `.task`-Schleife pro Karte |
+| **App: Karten** | alle 60 s, solange sichtbar, sofort bei geänderten Pins und beim Herunterziehen | eine `.task`-Schleife für alle Karten, parallel abgerufen; `.refreshable` wartet auf denselben Abruf |
+| **Widget: aus der App** | beim Herunterziehen | `WidgetCenter.reloadAllTimelines()`; zählt bei geöffneter App nicht zum Budget |
 
 - Die Minuten werden immer lokal aus `estimatedTime ?? plannedTime` berechnet. Das Feld `minutes` der API wird ignoriert.
 - Abfahrten bleiben noch 30 s als „jetzt“ stehen, ausgefallene werden nicht angezeigt (wie die Web-App).

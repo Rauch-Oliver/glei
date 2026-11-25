@@ -12,6 +12,9 @@ struct GleiApp: App {
 struct PinsView: View {
     @AppStorage(pinsKey, store: sharedDefaults) private var pinData = Data()
     @State private var adding = false
+    /// Last successful answer per pin ID, and the pins whose last fetch failed.
+    @State private var loaded: [String: (departures: [Departure], at: Date)] = [:]
+    @State private var failed: Set<String> = []
 
     private var pins: [Pin] { (try? JSONDecoder().decode([Pin].self, from: pinData)) ?? [] }
 
@@ -20,14 +23,35 @@ struct PinsView: View {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Fetches all pins in parallel; returns when all answered, so pull to refresh can wait for it.
+    private func load() async {
+        await withTaskGroup(of: (String, [Departure]?).self) { group in
+            for pin in pins { group.addTask { (pin.id, try? await pin.departures()) } }
+            for await (id, departures) in group {
+                if let departures {
+                    loaded[id] = (departures, .now)
+                    failed.remove(id)
+                } else {
+                    failed.insert(id)
+                }
+            }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 ForEach(pins) { pin in
                     Section {
-                        PinCard(pin: pin)
+                        PinCard(pin: pin, departures: loaded[pin.id]?.departures, fetchedAt: loaded[pin.id]?.at,
+                                failed: failed.contains(pin.id))
                             .swipeActions {
                                 Button("Entfernen", role: .destructive) { save(pins.filter { $0.id != pin.id }) }.tint(.red)
+                            }
+                            .contextMenu {   // swiping isn't discoverable; long press offers the same
+                                Button("Entfernen", systemImage: "trash", role: .destructive) {
+                                    save(pins.filter { $0.id != pin.id })
+                                }
                             }
                     }
                 }
@@ -39,6 +63,17 @@ struct PinsView: View {
                 }
             }
             .navigationTitle("glei")
+            .navigationBarTitleDisplayMode(.inline)
+            .refreshable {
+                await load()
+                WidgetCenter.shared.reloadAllTimelines()   // free while the app is open
+            }
+            .task(id: pinData) {   // restarts right away when pins are added or removed
+                while !Task.isCancelled {
+                    await load()
+                    try? await Task.sleep(for: .seconds(60))
+                }
+            }
             .toolbar { Button("Anheften", systemImage: "plus") { adding = true } }
             .sheet(isPresented: $adding) {
                 SearchView { pin in
@@ -50,19 +85,18 @@ struct PinsView: View {
     }
 }
 
-/// One pin: stop, line and the next 3 departures, refreshed every minute.
+/// One pin: stop, line and the next 3 departures; minutes recomputed every minute.
 struct PinCard: View {
     let pin: Pin
-    @State private var departures: [Departure]?
-    @State private var fetchedAt: Date?
-    @State private var failed = false
+    let departures: [Departure]?
+    let fetchedAt: Date?
+    let failed: Bool
 
     var body: some View {
         TimelineView(.everyMinute) { context in
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {   // stacked, so long names and large text don't collide
                     Text(shortName(pin.stop.name)).font(.headline)
-                    Spacer()
                     Text(pin.title).font(.subheadline).foregroundStyle(.secondary)
                 }
                 if let departures {
@@ -81,39 +115,36 @@ struct PinCard: View {
                 }
             }
         }
-        .task {
-            while !Task.isCancelled {
-                do {
-                    departures = try await pin.departures()
-                    fetchedAt = .now
-                    failed = false
-                } catch {
-                    failed = true
-                }
-                try? await Task.sleep(for: .seconds(60))
-            }
-        }
     }
 }
 
 /// Search a stop, then pin all lines or one line + direction.
 struct SearchView: View {
     let onPick: (Pin) -> Void
+    @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var stops: [Stop] = []
+    @State private var searched = ""   // the query `stops` belongs to
 
     var body: some View {
         NavigationStack {
             List(stops) { stop in
                 NavigationLink(stop.name) { LinesView(stop: stop, onPick: onPick) }
             }
+            .overlay {
+                if stops.isEmpty && searched == query && query.count >= 2 { ContentUnavailableView.search(text: query) }
+            }
             .navigationTitle("Haltestelle")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Abbrechen", role: .cancel) { dismiss() } }
+            }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Haltestelle suchen")
             .task(id: query) {
                 try? await Task.sleep(for: .milliseconds(300))   // debounce; cancelled by the next keystroke
                 guard query.count >= 2, !Task.isCancelled else { return stops = [] }
                 stops = (try? await API.stops(query)) ?? []
+                searched = query
             }
         }
     }
@@ -150,8 +181,17 @@ struct LinesView: View {
         }
         .overlay { if departures == nil && !failed { ProgressView() } }
         .navigationTitle(shortName(stop.name))
-        .task {
-            do { departures = try await API.departures(stop.id) } catch { failed = true }
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await load() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        do {
+            departures = try await API.departures(stop.id)
+            failed = false
+        } catch {
+            failed = true
         }
     }
 }

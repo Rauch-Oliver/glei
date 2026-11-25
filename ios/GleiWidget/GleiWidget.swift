@@ -71,7 +71,8 @@ struct WidgetView: View {
     let entry: Entry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        // Margins come from WidgetKit (16 pt, Apple's standard); the content just has to fit inside them.
+        VStack(alignment: .leading, spacing: 4) {
             if let pin = entry.pin {
                 Text(shortName(pin.stop.name)).font(.headline).lineLimit(1).widgetAccentable()
                 Text(pin.title).font(.caption).foregroundStyle(.secondary).lineLimit(1)
@@ -79,7 +80,8 @@ struct WidgetView: View {
                     let next = upcoming(departures, now: entry.date).prefix(3)
                     if next.isEmpty { Text("Keine Abfahrten").font(.caption) }
                     ForEach(Array(next), id: \.self) {
-                        DepartureRow(departure: $0, now: entry.date, showsDestination: pin.line == nil).font(.caption)
+                        DepartureRow(departure: $0, now: entry.date, showsDestination: pin.line == nil, compact: true)
+                            .font(.caption)
                     }
                     Spacer(minLength: 0)
                     Text("Stand \(entry.fetchedAt, style: .time)").font(.caption2).foregroundStyle(.secondary)

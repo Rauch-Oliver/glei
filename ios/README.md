@@ -32,7 +32,8 @@ Die Daten kommen von der glei API (`api/`). Die Spezifikation steht in [SPEC.md]
 | Aktion | Was passiert |
 |---|---|
 | ＋ | Haltestelle suchen, dann „Alle Linien“ oder eine Linie wählen. Heftet sie als Karte an |
-| Karte nach links wischen | „Entfernen“ |
+| Liste nach unten ziehen | Alle Karten und die Widgets aktualisieren |
+| Karte nach links wischen oder lange drücken | „Entfernen“ |
 | Homescreen lange drücken → ＋ → glei | Widget hinzufügen (klein oder mittel). Zeigt zuerst die erste angeheftete Haltestelle |
 | Widget lange drücken → „Widget bearbeiten“ | Andere angeheftete Haltestelle wählen |
 | Tippen aufs Widget | Öffnet die App |
