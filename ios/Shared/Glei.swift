@@ -55,7 +55,9 @@ func loadPins() -> [Pin] {
 
 enum API {
     static func stops(_ query: String) async throws -> [Stop] {
-        try await get(apiBase.appending(path: "stops/search").appending(queryItems: [.init(name: "query", value: query)]))
+        let url = apiBase.appending(path: "stops/search").appending(queryItems: [.init(name: "query", value: query)])
+        // URLQueryItem leaves "+" as is, which the server reads as a space ("P+R" → "P R").
+        return try await get(URL(string: url.absoluteString.replacingOccurrences(of: "+", with: "%2B"))!)
     }
 
     static func departures(_ stopId: String, line: String? = nil, direction: String? = nil, limit: Int = 100) async throws -> [Departure] {
@@ -68,8 +70,13 @@ enum API {
     private static func get<T: Decodable>(_ url: URL) async throws -> T {
         let (data, response) = try await URLSession.shared.data(from: url)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        return try decoder.decode(T.self, from: data)
+    }
+
+    /// ISO 8601 dates, with or without fractional seconds (`.iso8601` rejects those).
+    static var decoder: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { decoder in   // .iso8601 rejects fractional seconds
+        decoder.dateDecodingStrategy = .custom { decoder in
             let text = try decoder.singleValueContainer().decode(String.self)
             guard let date = (try? Date(text, strategy: .iso8601))
                     ?? (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text)) else {
@@ -77,7 +84,7 @@ enum API {
             }
             return date
         }
-        return try decoder.decode(T.self, from: data)
+        return decoder
     }
 }
 

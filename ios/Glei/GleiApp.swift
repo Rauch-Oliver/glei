@@ -149,7 +149,7 @@ struct SearchView: View {
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Haltestelle suchen")
             .task(id: query) {
                 let text = query
-                guard text.count >= 2 else { return stops = [] }
+                guard text.count >= 2 else { stops = []; searched = ""; return }
                 // Debounce. The next keystroke cancels this task; then keep the current results until new ones arrive.
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
@@ -178,7 +178,7 @@ struct LinesView: View {
                 }
                 Section("Eine Linie") {
                     if failed { Text("Keine Verbindung").foregroundStyle(.secondary) }
-                    ForEach(lineGroups(departures ?? [], now: context.date)) { group in
+                    ForEach(lineGroups(failed ? [] : departures ?? [], now: context.date)) { group in   // no stale lines after a failed refresh
                         Button {
                             onPick(Pin(stop: stop, line: group.line, direction: group.direction, label: group.label))
                         } label: {

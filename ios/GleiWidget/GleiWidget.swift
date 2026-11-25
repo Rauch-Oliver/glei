@@ -58,11 +58,11 @@ struct Provider: AppIntentTimelineProvider {
             return Timeline(entries: [failed], policy: .after(.now.addingTimeInterval(5 * 60)))
         }
         // Reload when only 2 are left; with 3 or fewer from the start (busy stop cut off by the API's 20, or night)
-        // when the first one leaves; with none after 5 min.
+        // when the first one leaves. Never sooner than 5 min: iOS only grants a few dozen reloads a day.
         let next = upcoming(departures, now: .now)
         let refill = next.count > 3 ? next[next.count - 3].time.addingTimeInterval(30)
-            : next.first?.time.addingTimeInterval(30) ?? .now.addingTimeInterval(5 * 60)
-        let reload = max(.now.addingTimeInterval(60), min(.now.addingTimeInterval(15 * 60), refill))
+            : next.first?.time.addingTimeInterval(30) ?? .now
+        let reload = max(.now.addingTimeInterval(5 * 60), min(.now.addingTimeInterval(15 * 60), refill))
         let entries = stride(from: Date.now, to: reload, by: 60).map { Entry(date: $0, pin: pin, departures: departures) }
         return Timeline(entries: entries, policy: .after(reload))
     }

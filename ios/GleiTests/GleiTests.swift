@@ -11,12 +11,11 @@ private func departure(_ line: String, _ destination: String, in minutes: Double
 }
 
 @Test func decodesApiResponse() throws {
-    let json = #"[{"line":"3","destination":"Andritz","minutes":4,"plannedTime":"2026-10-07T16:05:00Z","estimatedTime":null,"mode":"tram","cancelled":false,"direction":"outward"}]"#
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .iso8601
-    let result = try decoder.decode([Departure].self, from: Data(json.utf8))
+    let json = #"[{"line":"3","destination":"Andritz","minutes":4,"plannedTime":"2026-10-07T16:05:00Z","estimatedTime":"2026-10-07T16:06:00.5Z","mode":"tram","cancelled":false,"direction":"outward"}]"#
+    let result = try API.decoder.decode([Departure].self, from: Data(json.utf8))
     #expect(result[0].line == "3")
-    #expect(result[0].time == (try Date("2026-10-07T16:05:00Z", strategy: .iso8601)))
+    #expect(result[0].plannedTime == (try Date("2026-10-07T16:05:00Z", strategy: .iso8601)))
+    #expect(result[0].time.timeIntervalSince(result[0].plannedTime) == 60.5)   // fractional seconds accepted
 }
 
 @Test func upcomingDropsGoneAndCancelled() {
