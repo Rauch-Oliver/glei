@@ -1,0 +1,542 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3B53D3CBDF34ED4CB907E620 /* Glei.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECAA89A2FA0D482D7A804F2 /* Glei.swift */; };
+		4DA132350AD56F12FA2D28C8 /* Glei.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECAA89A2FA0D482D7A804F2 /* Glei.swift */; };
+		52A7EB7EF1048AB108F7A2CF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 749C544B7D7F506AF889587B /* Assets.xcassets */; };
+		6A51C607F5154F0F95491CBD /* GleiApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6F1B7D2A51366EF7047D943 /* GleiApp.swift */; };
+		7166F5ACFA867A94B3C50AAA /* GleiWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		883FA22DE42A1E965D106E0E /* GleiTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9D425AFA1B117D44FAEDF7 /* GleiTests.swift */; };
+		B18441295BED978AB96C3DA8 /* GleiWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4CC45EB2620211EAC2680 /* GleiWidget.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		081C44FD5420B867A1B90759 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 758FE53E0DE1B5818F9A415D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 57F4D2E815004D798F3AC30B;
+			remoteInfo = GleiWidget;
+		};
+		9C2528EFC14296B9663593F7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 758FE53E0DE1B5818F9A415D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9C2CDD0ABC46950071DD4F13;
+			remoteInfo = Glei;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A8D0CFE85B164FB397A50ACD /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7166F5ACFA867A94B3C50AAA /* GleiWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		12A128C490A1CCBACEF4BADD /* Glei.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Glei.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13D4CC45EB2620211EAC2680 /* GleiWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiWidget.swift; sourceTree = "<group>"; };
+		1C9D425AFA1B117D44FAEDF7 /* GleiTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiTests.swift; sourceTree = "<group>"; };
+		749C544B7D7F506AF889587B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = GleiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6F1B7D2A51366EF7047D943 /* GleiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiApp.swift; sourceTree = "<group>"; };
+		DCD9369DE89ADFCAA8DE9025 /* GleiTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GleiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EECAA89A2FA0D482D7A804F2 /* Glei.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Glei.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		87BD73349E79457AF120A210 /* GleiTests */ = {
+			isa = PBXGroup;
+			children = (
+				1C9D425AFA1B117D44FAEDF7 /* GleiTests.swift */,
+			);
+			path = GleiTests;
+			sourceTree = "<group>";
+		};
+		9C55BDC8B5D21C5B3BE0E4CF /* Glei */ = {
+			isa = PBXGroup;
+			children = (
+				749C544B7D7F506AF889587B /* Assets.xcassets */,
+				C6F1B7D2A51366EF7047D943 /* GleiApp.swift */,
+			);
+			path = Glei;
+			sourceTree = "<group>";
+		};
+		A32FB9F13AC4827EA502F7F5 /* GleiWidget */ = {
+			isa = PBXGroup;
+			children = (
+				13D4CC45EB2620211EAC2680 /* GleiWidget.swift */,
+			);
+			path = GleiWidget;
+			sourceTree = "<group>";
+		};
+		AAD2B9903E195D36E3629FED = {
+			isa = PBXGroup;
+			children = (
+				9C55BDC8B5D21C5B3BE0E4CF /* Glei */,
+				87BD73349E79457AF120A210 /* GleiTests */,
+				A32FB9F13AC4827EA502F7F5 /* GleiWidget */,
+				D90A790C6EAA902F86734DF8 /* Shared */,
+				C5AEC983DF586356FAFFD849 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C5AEC983DF586356FAFFD849 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				12A128C490A1CCBACEF4BADD /* Glei.app */,
+				DCD9369DE89ADFCAA8DE9025 /* GleiTests.xctest */,
+				A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D90A790C6EAA902F86734DF8 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				EECAA89A2FA0D482D7A804F2 /* Glei.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2E27FBCA388F3E294D894EB6 /* GleiTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD459923E80BEB82C9C56F9C /* Build configuration list for PBXNativeTarget "GleiTests" */;
+			buildPhases = (
+				B8D368E47ACEC3C4B71C480B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				36C2C258C2AD86953D1ADBF8 /* PBXTargetDependency */,
+			);
+			name = GleiTests;
+			packageProductDependencies = (
+			);
+			productName = GleiTests;
+			productReference = DCD9369DE89ADFCAA8DE9025 /* GleiTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		57F4D2E815004D798F3AC30B /* GleiWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0FA201590441788F10E84A8A /* Build configuration list for PBXNativeTarget "GleiWidget" */;
+			buildPhases = (
+				4CB998D6576CFCACA676BF29 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GleiWidget;
+			packageProductDependencies = (
+			);
+			productName = GleiWidget;
+			productReference = A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		9C2CDD0ABC46950071DD4F13 /* Glei */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 89C1BBA6BD4A0AAB3EAD3AD6 /* Build configuration list for PBXNativeTarget "Glei" */;
+			buildPhases = (
+				5C5E6B2F77E2B895A0D893F3 /* Sources */,
+				84F93EEA7F70CED75A0C28F7 /* Resources */,
+				A8D0CFE85B164FB397A50ACD /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2999A32D487E5315B12A733B /* PBXTargetDependency */,
+			);
+			name = Glei;
+			packageProductDependencies = (
+			);
+			productName = Glei;
+			productReference = 12A128C490A1CCBACEF4BADD /* Glei.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		758FE53E0DE1B5818F9A415D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					2E27FBCA388F3E294D894EB6 = {
+						ProvisioningStyle = Automatic;
+					};
+					57F4D2E815004D798F3AC30B = {
+						ProvisioningStyle = Automatic;
+					};
+					9C2CDD0ABC46950071DD4F13 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = ACFA5DDD43D0687FF6E088DE /* Build configuration list for PBXProject "Glei" */;
+			developmentRegion = de;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				de,
+			);
+			mainGroup = AAD2B9903E195D36E3629FED;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C5AEC983DF586356FAFFD849 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9C2CDD0ABC46950071DD4F13 /* Glei */,
+				57F4D2E815004D798F3AC30B /* GleiWidget */,
+				2E27FBCA388F3E294D894EB6 /* GleiTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		84F93EEA7F70CED75A0C28F7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				52A7EB7EF1048AB108F7A2CF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4CB998D6576CFCACA676BF29 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B53D3CBDF34ED4CB907E620 /* Glei.swift in Sources */,
+				B18441295BED978AB96C3DA8 /* GleiWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5C5E6B2F77E2B895A0D893F3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4DA132350AD56F12FA2D28C8 /* Glei.swift in Sources */,
+				6A51C607F5154F0F95491CBD /* GleiApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8D368E47ACEC3C4B71C480B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				883FA22DE42A1E965D106E0E /* GleiTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2999A32D487E5315B12A733B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 57F4D2E815004D798F3AC30B /* GleiWidget */;
+			targetProxy = 081C44FD5420B867A1B90759 /* PBXContainerItemProxy */;
+		};
+		36C2C258C2AD86953D1ADBF8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9C2CDD0ABC46950071DD4F13 /* Glei */;
+			targetProxy = 9C2528EFC14296B9663593F7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		03E1D2DCFE20DD4CF9D85F4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = glei;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		0413F14CA6CD584E304AD216 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = GleiWidget/GleiWidget.entitlements;
+				INFOPLIST_FILE = GleiWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app.widget;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		2CE611E91BCF93A530F96094 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = glei;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		61B4E605837EABD488FA44BF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = GleiWidget/GleiWidget.entitlements;
+				INFOPLIST_FILE = GleiWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app.widget;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		6735173AF217FB4428B35286 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Glei.app/Glei";
+			};
+			name = Release;
+		};
+		A74E19D49774E22BD37BC829 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Glei.app/Glei";
+			};
+			name = Debug;
+		};
+		E0E6B05D6109C7D41C39F8C1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Glei/Glei.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		E2E8D3354DB8D5CBBC13C97E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Glei/Glei.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = at.glei.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0FA201590441788F10E84A8A /* Build configuration list for PBXNativeTarget "GleiWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				61B4E605837EABD488FA44BF /* Debug */,
+				0413F14CA6CD584E304AD216 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		89C1BBA6BD4A0AAB3EAD3AD6 /* Build configuration list for PBXNativeTarget "Glei" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E2E8D3354DB8D5CBBC13C97E /* Debug */,
+				E0E6B05D6109C7D41C39F8C1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ACFA5DDD43D0687FF6E088DE /* Build configuration list for PBXProject "Glei" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2CE611E91BCF93A530F96094 /* Debug */,
+				03E1D2DCFE20DD4CF9D85F4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CD459923E80BEB82C9C56F9C /* Build configuration list for PBXNativeTarget "GleiTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A74E19D49774E22BD37BC829 /* Debug */,
+				6735173AF217FB4428B35286 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 758FE53E0DE1B5818F9A415D /* Project object */;
+}
