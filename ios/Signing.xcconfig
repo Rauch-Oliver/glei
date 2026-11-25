@@ -1,0 +1,6 @@
+// Personal signing settings stay out of git: put them in Local.xcconfig (git-ignored) next to this file, e.g.
+//
+//   DEVELOPMENT_TEAM = ABCDE12345
+//
+// Don't pick the team under Signing & Capabilities – Xcode would write it into project.pbxproj.
+#include? "Local.xcconfig"

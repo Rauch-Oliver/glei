@@ -48,13 +48,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		12A128C490A1CCBACEF4BADD /* Glei.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Glei.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5161A4C0C0FF1CE5161A4C01 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		12A128C490A1CCBACEF4BADD /* Glei.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glei.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13D4CC45EB2620211EAC2680 /* GleiWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiWidget.swift; sourceTree = "<group>"; };
 		1C9D425AFA1B117D44FAEDF7 /* GleiTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiTests.swift; sourceTree = "<group>"; };
 		749C544B7D7F506AF889587B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = GleiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A23ED0742B2AF5B2B83428C4 /* GleiWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GleiWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6F1B7D2A51366EF7047D943 /* GleiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GleiApp.swift; sourceTree = "<group>"; };
-		DCD9369DE89ADFCAA8DE9025 /* GleiTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GleiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCD9369DE89ADFCAA8DE9025 /* GleiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GleiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EECAA89A2FA0D482D7A804F2 /* Glei.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Glei.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -87,6 +88,7 @@
 		AAD2B9903E195D36E3629FED = {
 			isa = PBXGroup;
 			children = (
+				5161A4C0C0FF1CE5161A4C01 /* Signing.xcconfig */,
 				9C55BDC8B5D21C5B3BE0E4CF /* Glei */,
 				87BD73349E79457AF120A210 /* GleiTests */,
 				A32FB9F13AC4827EA502F7F5 /* GleiWidget */,
@@ -178,7 +180,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					2E27FBCA388F3E294D894EB6 = {
 						ProvisioningStyle = Automatic;
@@ -268,6 +270,7 @@
 /* Begin XCBuildConfiguration section */
 		03E1D2DCFE20DD4CF9D85F4E /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5161A4C0C0FF1CE5161A4C01 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -305,6 +308,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -321,6 +325,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -346,6 +351,7 @@
 		};
 		2CE611E91BCF93A530F96094 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5161A4C0C0FF1CE5161A4C01 /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -383,6 +389,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -406,6 +413,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;

@@ -1,27 +1,60 @@
-# glei (iOS)
+# glei für iOS
 
-App mit angehefteten Haltestellen und ein Homescreen-Widget dazu. Daten von der glei API (`api/`).
+Eine iPhone-App mit deinen Haltestellen, und ein Widget für den Homescreen.
 
-- **App:** Haltestellen anheften, alle Linien oder eine Linie in eine Richtung. Jede ist eine Karte mit den nächsten 3 Abfahrten, live jede Minute. Mit `+` suchen und anheften, zum Entfernen die Karte nach links wischen.
-- **Widget:** zeigt eine der angehefteten Haltestellen. Welche, stellt man unter „Widget bearbeiten“ ein. Für mehrere Haltestellen legt man mehrere Widgets an.
+- In der **App** heftest du Haltestellen an: alle Linien, oder eine Linie in eine Richtung (z. B. „3er → Andritz“). Jede ist eine Karte mit den nächsten 3 Abfahrten, live jede Minute.
+- Jedes **Widget** zeigt eine davon. Für mehrere Haltestellen legst du mehrere Widgets an.
 
-App und Widget teilen sich die Pins über die App Group `group.at.glei.app`.
+Die Daten kommen von der glei API (`api/`). Die Spezifikation steht in [SPEC.md](SPEC.md).
 
-| Datei | Inhalt |
+## Voraussetzungen
+
+- Ein Mac mit **Xcode 16** oder neuer
+- Ein iPhone mit **iOS 17** oder neuer
+- Eine **Apple-ID** in Xcode (*Xcode → Settings → Accounts*). Ein kostenloser Account reicht. Damit läuft die App allerdings nur 7 Tage, danach neu aus Xcode installieren. Mit dem bezahlten Developer Program ein Jahr.
+
+## Einrichten
+
+1. Deine **Team-ID** herausfinden: *Xcode → Settings → Accounts → (deine Apple-ID) → Team*. Oder im [Developer-Konto](https://developer.apple.com/account) unter *Membership*.
+2. Die Datei `ios/Local.xcconfig` anlegen. Sie wird nicht eingecheckt:
+   ```
+   DEVELOPMENT_TEAM = ABCDE12345
+   ```
+   > Das Team **nicht** unter *Signing & Capabilities* auswählen: Xcode würde es in `project.pbxproj` schreiben, und es landet im Git.
+3. `ios/Glei.xcodeproj` öffnen, das iPhone wählen, Scheme `Glei` ausführen (`⌘R`).
+   - Beim ersten Mal auf dem iPhone: *Einstellungen → Datenschutz & Sicherheit → Entwicklermodus* einschalten, und unter *Allgemein → VPN & Geräteverwaltung* dem eigenen Zertifikat vertrauen.
+4. **Sind die IDs schon vergeben?** Xcode meldet dann einen Fehler bei der Bundle-ID oder der App Group. Dann eigene verwenden:
+   - Bundle-IDs (`at.glei.app`, `at.glei.app.widget`): in Xcode bei den Targets *Glei* und *GleiWidget* unter *General*.
+   - App Group (`group.at.glei.app`): in `Shared/Glei.swift` und in beiden `.entitlements`-Dateien.
+
+## Bedienung
+
+| Aktion | Was passiert |
 |---|---|
-| `Shared/Glei.swift` | Modelle, Pins, API-Aufrufe, Anzeigeregeln (App + Widget) |
-| `Glei/GleiApp.swift` | App: Karten, Suche, Linienauswahl |
-| `GleiWidget/GleiWidget.swift` | Widget: Pin-Auswahl, Timeline, Ansicht |
+| ＋ | Haltestelle suchen, dann „Alle Linien“ oder eine Linie wählen. Heftet sie als Karte an |
+| Karte nach links wischen | „Entfernen“ |
+| Homescreen lange drücken → ＋ → glei | Widget hinzufügen (klein oder mittel). Zeigt zuerst die erste angeheftete Haltestelle |
+| Widget lange drücken → „Widget bearbeiten“ | Andere angeheftete Haltestelle wählen |
+| Tippen aufs Widget | Öffnet die App |
 
-## Starten
+- Das Widget ruft die Abfahrten ab und zählt die Minuten danach selbst herunter. Neue Daten holt es nach spätestens 15 Minuten, bei vielen Abfahrten früher. Wie oft genau, entscheidet iOS.
+- Gespeichert wird nur die Liste der angehefteten Haltestellen (auf dem iPhone, in der App Group).
 
-1. `ios/Glei.xcodeproj` in Xcode öffnen (iOS 17+).
-2. Bei `Glei` und `GleiWidget` unter *Signing & Capabilities* das eigene Team wählen. Xcode registriert dann die App Group. Sind die IDs `at.glei.app` bzw. `group.at.glei.app` schon vergeben, eigene nehmen. Die Gruppe muss dann auch in `Shared/Glei.swift` und in beiden `.entitlements`-Dateien geändert werden.
-3. Scheme `Glei` ausführen, in der App Haltestellen anheften.
-4. Homescreen lange drücken → „+“ → glei → Widget hinzufügen. Es zeigt zuerst den ersten Pin. Ändern unter „Widget bearbeiten“.
+## Entwickeln
 
-## Aktualisierung
+- Projektaufbau:
 
-Das Widget ruft die API einmal ab und rechnet die Minuten danach jede Minute selbst neu. Nach 15 Minuten wird neu abgerufen, nach einem Fehler nach 5. Wie oft iOS Widgets tatsächlich aktualisiert, entscheidet das System. Ändern sich die Pins in der App, werden die Widgets sofort neu geladen.
+  | Datei | Inhalt |
+  |---|---|
+  | `Shared/Glei.swift` | App + Widget: Modelle, Pins, API-Aufrufe, Anzeigeregeln |
+  | `Glei/GleiApp.swift` | App: Karten, Suche, Linienauswahl |
+  | `GleiWidget/GleiWidget.swift` | Widget: Pin-Auswahl, Timeline, Ansicht |
+  | `GleiTests/GleiTests.swift` | Tests |
 
-Tests: `⌘U` in Xcode.
+- Tests: `⌘U` in Xcode, oder
+  ```bash
+  xcodebuild -project ios/Glei.xcodeproj -scheme Glei -destination 'platform=iOS Simulator,name=iPhone Air' test
+  ```
+- **Simulator:** Widget hinzufügen wie am iPhone. Beim Bauen ohne Signierung (`CODE_SIGNING_ALLOWED=NO`) bleibt das Widget leer, weil iOS seiner Konfiguration ohne Signatur nicht traut. Aus Xcode heraus passiert das nicht.
+- **Andere API** (z. B. lokal): `apiBase` in `Shared/Glei.swift` ändern.
+- Keine Abhängigkeiten, kein Projektgenerator: neue Dateien in Xcode zum passenden Target hinzufügen. `Shared/` gehört zu beiden (*Glei* und *GleiWidget*).
