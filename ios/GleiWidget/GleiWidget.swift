@@ -57,8 +57,11 @@ struct Provider: AppIntentTimelineProvider {
             let failed = Entry(date: .now, pin: pin, departures: nil)
             return Timeline(entries: [failed], policy: .after(.now.addingTimeInterval(5 * 60)))
         }
+        // Reload when only 2 are left; with 3 or fewer from the start (busy stop cut off by the API's 20, or night)
+        // when the first one leaves; with none after 5 min.
         let next = upcoming(departures, now: .now)
-        let refill = next.count > 3 ? next[next.count - 3].time.addingTimeInterval(30) : .distantFuture
+        let refill = next.count > 3 ? next[next.count - 3].time.addingTimeInterval(30)
+            : next.first?.time.addingTimeInterval(30) ?? .now.addingTimeInterval(5 * 60)
         let reload = max(.now.addingTimeInterval(60), min(.now.addingTimeInterval(15 * 60), refill))
         let entries = stride(from: Date.now, to: reload, by: 60).map { Entry(date: $0, pin: pin, departures: departures) }
         return Timeline(entries: entries, policy: .after(reload))
@@ -79,8 +82,8 @@ struct WidgetView: View {
                 if let departures = entry.departures {
                     let next = upcoming(departures, now: entry.date).prefix(3)
                     if next.isEmpty { Text("Keine Abfahrten").font(.caption) }
-                    ForEach(Array(next), id: \.self) {
-                        DepartureRow(departure: $0, now: entry.date, showsDestination: pin.line == nil, compact: true)
+                    ForEach(Array(next.enumerated()), id: \.offset) {   // two departures can be identical
+                        DepartureRow(departure: $0.element, now: entry.date, showsDestination: pin.line == nil, compact: true)
                             .font(.caption)
                     }
                     Spacer(minLength: 0)

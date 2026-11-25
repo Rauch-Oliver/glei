@@ -72,7 +72,7 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 
 | Was | Wann | Wie |
 |---|---|---|
-| **Widget: Daten abrufen** (Netz) | nach 15 min, oder früher, wenn nur noch 2 der abgerufenen Abfahrten übrig sind. Nach einem Fehler nach 5 min | Timeline-Policy `.after(…)` |
+| **Widget: Daten abrufen** (Netz) | nach 15 min, oder früher: wenn nur noch 2 der abgerufenen Abfahrten übrig sind, bei 3 oder weniger schon wenn die erste abgefahren ist. Ohne Abfahrten und nach einem Fehler nach 5 min | Timeline-Policy `.after(…)` |
 | **Widget: Minuten neu berechnen** (lokal) | jede Minute | ein Timeline-Eintrag pro Minute aus einem Abruf |
 | **Widget: Pins geändert** | sofort | `WidgetCenter.reloadAllTimelines()` aus der App |
 | **App: Karten** | alle 60 s, solange sichtbar, sofort bei geänderten Pins und beim Herunterziehen | eine `.task`-Schleife für alle Karten, parallel abgerufen; `.refreshable` wartet auf denselben Abruf |

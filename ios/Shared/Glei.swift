@@ -40,7 +40,7 @@ struct Pin: Codable, Hashable, Identifiable {
     var title: String { line.map { "\(lineName($0)) → \(shortName(label ?? ""))" } ?? "Alle Linien" }
 
     func departures() async throws -> [Departure] {
-        let all = try await API.departures(stop.id, line: line, direction: direction, limit: 20)
+        let all = try await API.departures(stop.id, line: line, direction: direction)
         return line != nil && direction == nil ? all.filter { $0.destination == label } : all
     }
 }
@@ -69,7 +69,14 @@ enum API {
         let (data, response) = try await URLSession.shared.data(from: url)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in   // .iso8601 rejects fractional seconds
+            let text = try decoder.singleValueContainer().decode(String.self)
+            guard let date = (try? Date(text, strategy: .iso8601))
+                    ?? (try? Date.ISO8601FormatStyle(includingFractionalSeconds: true).parse(text)) else {
+                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Bad date: \(text)"))
+            }
+            return date
+        }
         return try decoder.decode(T.self, from: data)
     }
 }

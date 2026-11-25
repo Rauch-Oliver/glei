@@ -102,8 +102,8 @@ struct PinCard: View {
                 if let departures {
                     let next = upcoming(departures, now: context.date).prefix(3)
                     if next.isEmpty { Text("Keine Abfahrten").foregroundStyle(.secondary) }
-                    ForEach(Array(next), id: \.self) {
-                        DepartureRow(departure: $0, now: context.date, showsDestination: pin.line == nil)
+                    ForEach(Array(next.enumerated()), id: \.offset) {   // two departures can be identical
+                        DepartureRow(departure: $0.element, now: context.date, showsDestination: pin.line == nil)
                     }
                     if failed, let fetchedAt {
                         Text("Stand \(fetchedAt, style: .time) · offline").font(.caption).foregroundStyle(.orange)
@@ -125,6 +125,7 @@ struct SearchView: View {
     @State private var query = ""
     @State private var stops: [Stop] = []
     @State private var searched = ""   // the query `stops` belongs to
+    @State private var failed = false
 
     var body: some View {
         NavigationStack {
@@ -132,7 +133,13 @@ struct SearchView: View {
                 NavigationLink(stop.name) { LinesView(stop: stop, onPick: onPick) }
             }
             .overlay {
-                if stops.isEmpty && searched == query && query.count >= 2 { ContentUnavailableView.search(text: query) }
+                if stops.isEmpty && searched == query && query.count >= 2 {
+                    if failed {
+                        ContentUnavailableView("Keine Verbindung", systemImage: "wifi.slash")
+                    } else {
+                        ContentUnavailableView.search(text: query)
+                    }
+                }
             }
             .navigationTitle("Haltestelle")
             .navigationBarTitleDisplayMode(.inline)
@@ -141,10 +148,16 @@ struct SearchView: View {
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Haltestelle suchen")
             .task(id: query) {
-                try? await Task.sleep(for: .milliseconds(300))   // debounce; cancelled by the next keystroke
-                guard query.count >= 2, !Task.isCancelled else { return stops = [] }
-                stops = (try? await API.stops(query)) ?? []
-                searched = query
+                let text = query
+                guard text.count >= 2 else { return stops = [] }
+                // Debounce. The next keystroke cancels this task; then keep the current results until new ones arrive.
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
+                let result = try? await API.stops(text)
+                guard !Task.isCancelled else { return }
+                stops = result ?? []
+                failed = result == nil
+                searched = text
             }
         }
     }
@@ -158,24 +171,26 @@ struct LinesView: View {
     @State private var failed = false
 
     var body: some View {
-        List {
-            Section {
-                Button("Alle Linien") { onPick(Pin(stop: stop)) }
-            }
-            Section("Eine Linie") {
-                if failed { Text("Keine Verbindung").foregroundStyle(.secondary) }
-                ForEach(lineGroups(departures ?? [], now: .now)) { group in
-                    Button {
-                        onPick(Pin(stop: stop, line: group.line, direction: group.direction, label: group.label))
-                    } label: {
-                        HStack {
-                            LineBadge(line: group.line, mode: group.mode)
-                            Text("→ \(shortName(group.label))").lineLimit(1)
-                            Spacer()
-                            Text(minutesText(group.next, now: .now)).monospacedDigit().foregroundStyle(.secondary)
+        TimelineView(.everyMinute) { context in
+            List {
+                Section {
+                    Button("Alle Linien") { onPick(Pin(stop: stop)) }
+                }
+                Section("Eine Linie") {
+                    if failed { Text("Keine Verbindung").foregroundStyle(.secondary) }
+                    ForEach(lineGroups(departures ?? [], now: context.date)) { group in
+                        Button {
+                            onPick(Pin(stop: stop, line: group.line, direction: group.direction, label: group.label))
+                        } label: {
+                            HStack {
+                                LineBadge(line: group.line, mode: group.mode)
+                                Text("→ \(shortName(group.label))").lineLimit(1)
+                                Spacer()
+                                Text(minutesText(group.next, now: context.date)).monospacedDigit().foregroundStyle(.secondary)
+                            }
                         }
+                        .foregroundStyle(.primary)
                     }
-                    .foregroundStyle(.primary)
                 }
             }
         }
