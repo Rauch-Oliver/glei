@@ -44,13 +44,15 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 
 - **Karten:** eine pro Pin, in der Reihenfolge des Anheftens. Kopf: Haltestelle (ohne „Graz “) und „Alle Linien“ bzw. „4er → Liebenau“. Darunter die nächsten 3 Abfahrten: Linie als Badge, Ziel, Minuten (`jetzt` bei 0).
   - Bei einer einzelnen Linie fällt das Ziel weg, es steht schon im Kopf.
-  - Abruf aller Karten gemeinsam alle 60 s und sofort, wenn ein Pin dazukommt oder wegfällt. Die Minuten werden jede volle Minute lokal neu berechnet.
-  - **Offline:** ohne Daten „Keine Verbindung“, mit alten Daten zusätzlich „Stand 19:39 · offline“ (orange).
+  - Alle Karten werden gemeinsam abgerufen und ändern sich gemeinsam. Die Minuten werden jede volle Minute lokal neu berechnet.
+  - **Laden:** Vor der ersten Antwort zeigt eine Karte Platzhalterzeilen (ausgegraut), keinen eigenen Ladekreis. Der einzige Ladeindikator ist der des Herunterziehens.
+  - **Stand:** eine Zeile unter der letzten Karte für alle: „Stand 19:39“. Ist eine Karte offline: „offline · Stand“ mit den ältesten angezeigten Daten, ohne Daten nur „offline“. Daten von gestern oder älter mit „gestern“ bzw. Datum („offline · Stand gestern 22:15“).
+  - **Offline:** wie unter Windows, Android und im Web: die letzten Abfahrten bleiben ausgegraut stehen, darunter „offline · Stand 19:39“. Ohne Daten „Keine Verbindung“.
 - **Anheften (＋):** ein Sheet mit Haltestellensuche (ab 2 Zeichen, 300 ms Debounce, `GET /api/stops/search`). Eine Haltestelle öffnet die Linienauswahl:
   - **„Alle Linien“**, oder
   - **eine Linie in eine Richtung**, aus den gerade fahrenden Abfahrten nach Linie und Richtung gruppiert, beschriftet mit dem häufigsten Ziel („3 → Andritz · 4 · 11 · 19 min“).
   - Tippen heftet an und schließt das Sheet. Ein schon vorhandener Pin wird nicht doppelt angelegt.
-- **Aktualisieren:** Liste nach unten ziehen. Lädt alle Karten neu (der Indikator bleibt, bis alle geantwortet haben) und lädt auch die Widgets neu. Dasselbe in der Linienauswahl.
+- **Aktualisieren:** Liste nach unten ziehen. Lädt alle Karten neu (der Indikator bleibt, bis alle geantwortet haben) und damit auch die Widgets. Dasselbe in der Linienauswahl.
 - **Entfernen:** Karte nach links wischen oder lange drücken → „Entfernen“.
 - **Leer:** „Noch nichts angeheftet – Mit + eine Haltestelle suchen und anheften. Jedes Widget zeigt eine davon.“
 - **Liniensymbole** wie auf den Grazer Haltestellenschildern: Bim ohne Rahmen, Bus mit Rahmen, Nachtlinien (`N…`) blau hinterlegt.
@@ -64,7 +66,7 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 
 - **Einstellen:** Widget lange drücken → „Widget bearbeiten“ → **Haltestelle** = einer der Pins. Ein neues Widget zeigt gleich den ersten Pin.
 - Ohne Pin bzw. wenn der Pin in der App entfernt wurde: „In der App eine Haltestelle anheften, dann hier „Widget bearbeiten“.“
-- **Keine Abfahrten:** „Keine Abfahrten“. **Fehler:** „Keine Verbindung“.
+- Darstellung wie die Karten in der App (gemeinsame Ansicht `BoardView`): **Keine Abfahrten:** „Keine Abfahrten“. **Offline:** letzte Abfahrten ausgegraut, „offline · Stand 19:39“. **Ohne Daten:** „Keine Verbindung“.
 - **Tippen** öffnet die App.
 - **Getönter / klarer Homescreen** (iOS 18+, Liquid Glass): Hintergrund über `containerBackground`, den das System durch Glas ersetzt. Der Haltestellenname ist `widgetAccentable`. Nachtlinien werden dort nur umrandet statt gefüllt, sonst würden sie ein einfarbiger Block.
 
@@ -72,11 +74,11 @@ Eine iPhone-App mit **angehefteten Haltestellen** und ein **Homescreen-Widget** 
 
 | Was | Wann | Wie |
 |---|---|---|
-| **Widget: Daten abrufen** (Netz) | nach 15 min, oder früher: wenn nur noch 2 der abgerufenen Abfahrten übrig sind, bei 3 oder weniger schon wenn die erste abgefahren ist. Nie früher als nach 5 min (Tagesbudget von iOS). Ohne Abfahrten und nach einem Fehler nach 5 min | Timeline-Policy `.after(…)` |
-| **Widget: Minuten neu berechnen** (lokal) | jede Minute | ein Timeline-Eintrag pro Minute aus einem Abruf |
+| **App: Karten** | alle 60 s, früher wenn weniger als 3 der abgerufenen Abfahrten übrig sind (frühestens nach 15 s). Sofort bei geänderten Pins, beim Herunterziehen und wenn die App aus dem Hintergrund zurückkommt; im Hintergrund pausiert. Kontrollzentrum, Mitteilungen oder Face ID (`.inactive`) unterbrechen nicht. Schlagen alle Pins fehl, 1 → 2 → 5 min (wie Windows/Linux); ein einzelner kaputter Pin bremst die anderen nicht | ein gemeinsamer Abruf für alle Karten (parallel, Ergebnisse gemeinsam übernommen); Timer, Herunterziehen und Pin-Änderungen laufen alle darüber, ein abgebrochener Abruf gilt nicht als offline |
+| **Widget: aus der App** | nach jedem Abruf der App | Die App speichert jede Antwort pro Pin in der App Group (`BoardCache`) und ruft danach `WidgetCenter.reloadAllTimelines()` auf (nicht, wenn alle Abrufe fehlschlugen); zählt bei geöffneter App nicht zum Budget. Ist die gespeicherte Antwort jünger als 5 min (das Mindestintervall des Widgets; iOS führt das Neuladen manchmal verzögert aus), nimmt das Widget sie, statt selbst abzurufen: App und Widget zeigen dieselben Daten und denselben Stand |
+| **Widget: Daten abrufen** (Netz) | nach 15 min, oder früher nach derselben Regel wie die App (weniger als 3 übrig). Nie früher als nach 5 min (Tagesbudget von iOS). Ohne Abfahrten und nach einem Fehler nach 5 min, nach einem Fehler mit den letzten Daten aus dem `BoardCache` | Timeline-Policy `.after(…)` |
+| **Widget: Minuten neu berechnen** (lokal) | zu jeder vollen Minute, wie die Karten der App | ein Timeline-Eintrag pro voller Minute aus einem Abruf |
 | **Widget: Pins geändert** | sofort | `WidgetCenter.reloadAllTimelines()` aus der App |
-| **App: Karten** | alle 60 s, solange sichtbar, sofort bei geänderten Pins und beim Herunterziehen | eine `.task`-Schleife für alle Karten, parallel abgerufen; `.refreshable` wartet auf denselben Abruf |
-| **Widget: aus der App** | beim Herunterziehen | `WidgetCenter.reloadAllTimelines()`; zählt bei geöffneter App nicht zum Budget |
 
 - Die Minuten werden immer lokal aus `estimatedTime ?? plannedTime` berechnet. Das Feld `minutes` der API wird ignoriert.
 - Abfahrten bleiben noch 30 s als „jetzt“ stehen, ausgefallene werden nicht angezeigt (wie die Web-App).
@@ -96,8 +98,9 @@ Die Pins liegen als JSON in den `UserDefaults` der **App Group** `group.at.glei.
 
 - **ID eines Pins:** `stopId|line|direction`. Liefert TRIAS für eine Linie keine Richtung, wird stattdessen das Ziel (`label`) verwendet und auch danach gefiltert, weil die Linienauswahl solche Linien nach Ziel trennt.
 - Das Widget speichert nur die ID seines Pins (in seiner Widget-Konfiguration).
+- Die letzte erfolgreiche Antwort pro Pin liegt ebenfalls in der App Group (Schlüssel `board.<Pin-ID>`, `BoardCache`), damit das Widget die Daten der App übernimmt und offline die letzten Abfahrten zeigt. Beim Entfernen eines Pins wird sie gelöscht.
 - Die API-Basis-URL steht in `Shared/Glei.swift` (die öffentliche Cloud-Run-URL des Service `glei`).
-- Kein Login, keine Telemetrie, nichts außer den Pins.
+- Kein Login, keine Telemetrie, nichts außer den Pins und ihren letzten Abfahrten.
 
 ## 5. API
 

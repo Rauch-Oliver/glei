@@ -43,7 +43,82 @@ struct Pin: Codable, Hashable, Identifiable {
         let all = try await API.departures(stop.id, line: line, direction: direction)
         return line != nil && direction == nil ? all.filter { $0.destination == label } : all
     }
+
+    /// Fetches the pin. On failure the last answer stays, marked offline (like the other glei clients).
+    /// nil when cancelled: that's not a failure, and nothing is cached.
+    func board() async -> Board? {
+        do {
+            let departures = try await departures()
+            try Task.checkCancellation()
+            let board = Board(departures: departures, fetchedAt: .now)
+            if loadPins().contains(where: { $0.id == id }) { BoardCache.save(board, for: self) }   // not if removed meanwhile
+            return board
+        } catch {
+            if Task.isCancelled { return nil }
+            var stale = BoardCache.load(self) ?? Board(departures: [], fetchedAt: nil)
+            stale.offline = true
+            return stale
+        }
+    }
 }
+
+/// The last answer for a pin. `fetchedAt == nil`: never loaded ("Keine Verbindung").
+struct Board: Codable, Hashable {
+    var departures: [Departure]
+    var fetchedAt: Date?
+    var offline = false
+
+    /// "Stand 19:39" or "offline · Stand 19:39", as on Windows, Android and the web.
+    func status(now: Date = .now) -> String? { fetchedAt == nil ? nil : combinedStatus([self], now: now) }
+}
+
+/// The status line for boards fetched together. Any offline: "offline · Stand" with the oldest data shown
+/// (just "offline" without any); otherwise "Stand" of the latest fetch. Older than today with "gestern" or the date.
+func combinedStatus(_ boards: [Board], now: Date = .now) -> String? {
+    func stand(_ date: Date) -> String { "Stand \(standTime(date, now: now))" }
+    let offline = boards.filter(\.offline)
+    if !offline.isEmpty { return offline.compactMap(\.fetchedAt).min().map { "offline · \(stand($0))" } ?? "offline" }
+    return boards.compactMap(\.fetchedAt).max().map(stand)
+}
+
+/// Last good answer per pin in the App Group: the widget shows what the app just loaded, and keeps it when offline.
+enum BoardCache {
+    private static func key(_ pin: Pin) -> String { "board.\(pin.id)" }
+
+    static func load(_ pin: Pin) -> Board? {
+        sharedDefaults.data(forKey: key(pin)).flatMap { try? JSONDecoder().decode(Board.self, from: $0) }
+    }
+
+    static func save(_ board: Board, for pin: Pin) {
+        sharedDefaults.set(try? JSONEncoder().encode(board), forKey: key(pin))
+    }
+
+    static func remove(_ pin: Pin) { sharedDefaults.removeObject(forKey: key(pin)) }
+}
+
+/// "19:39", "gestern 22:15", or "24. Nov., 22:15".
+func standTime(_ date: Date, now: Date) -> String {
+    let calendar = Calendar.current
+    let time = date.formatted(date: .omitted, time: .shortened)
+    if calendar.isDate(date, inSameDayAs: now) { return time }
+    if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) {
+        return "gestern \(time)"
+    }
+    return date.formatted(.dateTime.day().month().hour().minute())
+}
+
+// MARK: - Refresh rules (same as the other glei clients)
+
+/// When to fetch again: after `interval`, or earlier once fewer than 3 of the fetched departures are left
+/// (when the API had 3 or fewer: once the first is gone). Never sooner than `minimum`.
+func nextFetch(_ board: Board, now: Date, interval: TimeInterval, minimum: TimeInterval) -> Date {
+    let next = upcoming(board.departures, now: now)
+    let refill = (next.count > 3 ? next[next.count - 3] : next.first)?.time.addingTimeInterval(30) ?? .distantFuture
+    return max(now.addingTimeInterval(minimum), min(now.addingTimeInterval(interval), refill))
+}
+
+/// Wait after the n-th failed fetch in a row: 1, 2, then 5 minutes (Windows/Linux backoff).
+func retryDelay(afterErrors errors: Int) -> TimeInterval { [60, 120, 300][min(max(errors, 1), 3) - 1] }
 
 /// Pins live in the App Group so the widget can read them.
 nonisolated(unsafe) let sharedDefaults = UserDefaults(suiteName: "group.at.glei.app")!   // UserDefaults is thread-safe
@@ -130,6 +205,45 @@ func shortName(_ name: String) -> String { name.hasPrefix("Graz ") ? String(name
 func minutesText(_ departures: [Departure], now: Date) -> String {
     let parts = departures.map { $0.minutes(from: now) }.map { $0 == 0 ? "jetzt" : "\($0)" }
     return parts.joined(separator: " · ") + (parts.last == "jetzt" ? "" : " min")
+}
+
+/// The next 3 departures of a pin, shared by app cards and widgets so both look and behave the same.
+/// Not loaded yet: placeholder rows (no spinner; the pull to refresh indicator is the only one).
+/// Offline: the last departures greyed out.
+struct BoardView: View {
+    let pin: Pin
+    let board: Board?
+    let now: Date
+    var compact = false
+
+    var body: some View {
+        if let board, board.fetchedAt != nil {
+            let next = upcoming(board.departures, now: now).prefix(3)
+            Group {
+                if next.isEmpty { Text("Keine Abfahrten").foregroundStyle(.secondary) }
+                ForEach(Array(next.enumerated()), id: \.offset) {   // two departures can be identical
+                    DepartureRow(departure: $0.element, now: now, showsDestination: pin.line == nil, compact: compact)
+                }
+            }
+            .opacity(board.offline ? 0.5 : 1)
+        } else if board != nil {
+            Text("Keine Verbindung").foregroundStyle(.secondary)
+        } else {
+            ForEach(0..<3, id: \.self) { _ in
+                DepartureRow(departure: .placeholder(at: now), now: now, showsDestination: pin.line == nil, compact: compact)
+            }
+            .redacted(reason: .placeholder)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+extension Departure {
+    /// Stand-in for a row while loading, shown redacted.
+    static func placeholder(at now: Date) -> Departure {
+        Departure(line: "00", destination: "Haltestelle", plannedTime: now.addingTimeInterval(10 * 60),
+                  estimatedTime: nil, mode: "tram", cancelled: false, direction: nil)
+    }
 }
 
 /// "3  Andritz      4 min"; without the destination when the card or widget is for one line anyway.

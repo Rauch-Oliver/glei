@@ -54,3 +54,45 @@ private func departure(_ line: String, _ destination: String, in minutes: Double
     #expect(minutesText([departure("3", "A", in: 0), departure("3", "A", in: 7)], now: now) == "jetzt · 7 min")
     #expect(minutesText([departure("3", "A", in: 0)], now: now) == "jetzt")
 }
+
+@Test func refreshRules() {
+    let many = (1...10).map { departure("3", "A", in: Double($0 * 5)) }   // 5 … 50 min
+    // Refill once only 2 are left: when the 8th (40 min) is gone, plus the 30 s it stays as "jetzt".
+    #expect(nextFetch(Board(departures: many, fetchedAt: now), now: now, interval: 3600, minimum: 0)
+            == now.addingTimeInterval(40 * 60 + 30))
+    #expect(nextFetch(Board(departures: many, fetchedAt: now), now: now, interval: 60, minimum: 15) == now.addingTimeInterval(60))
+    // 3 or fewer from the API: once the first is gone; never sooner than the minimum.
+    let few = [departure("3", "A", in: 0.1), departure("3", "A", in: 20)]
+    #expect(nextFetch(Board(departures: few, fetchedAt: now), now: now, interval: 900, minimum: 300) == now.addingTimeInterval(300))
+    #expect(nextFetch(Board(departures: [], fetchedAt: now), now: now, interval: 900, minimum: 300) == now.addingTimeInterval(900))
+    #expect([1, 2, 3, 9].map { retryDelay(afterErrors: $0) } == [60, 120, 300, 300])
+}
+
+@Test func boardStatus() {
+    let time = now.formatted(date: .omitted, time: .shortened)
+    #expect(Board(departures: [], fetchedAt: now).status(now: now) == "Stand \(time)")
+    #expect(Board(departures: [], fetchedAt: now, offline: true).status(now: now) == "offline · Stand \(time)")
+    #expect(Board(departures: [], fetchedAt: nil, offline: true).status(now: now) == nil)
+}
+
+@Test func combinedStatusOfAllCards() {
+    let earlier = now.addingTimeInterval(-3600)
+    func stand(_ date: Date) -> String { "Stand \(date.formatted(date: .omitted, time: .shortened))" }
+    let fresh = Board(departures: [], fetchedAt: now)
+    let stale = Board(departures: [], fetchedAt: earlier, offline: true)
+    let never = Board(departures: [], fetchedAt: nil, offline: true)
+    #expect(combinedStatus([fresh, Board(departures: [], fetchedAt: earlier)], now: now) == stand(now))
+    #expect(combinedStatus([fresh, stale, Board(departures: [], fetchedAt: now, offline: true)], now: now) == "offline · \(stand(earlier))")
+    #expect(combinedStatus([fresh, never], now: now) == "offline")   // a pin that never loaded still says so
+    #expect(combinedStatus([]) == nil)
+}
+
+@Test func standTimeOlderThanToday() {
+    let time = { (date: Date) in date.formatted(date: .omitted, time: .shortened) }
+    let today = Calendar.current.startOfDay(for: now).addingTimeInterval(10 * 3600)
+    let lastNight = Calendar.current.startOfDay(for: now).addingTimeInterval(-2 * 3600)
+    let lastWeek = now.addingTimeInterval(-7 * 86400)
+    #expect(standTime(today, now: now) == time(today))
+    #expect(standTime(lastNight, now: now) == "gestern \(time(lastNight))")
+    #expect(standTime(lastWeek, now: now) == lastWeek.formatted(.dateTime.day().month().hour().minute()))
+}
